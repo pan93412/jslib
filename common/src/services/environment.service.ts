@@ -1,11 +1,11 @@
 import { Observable, Subject } from 'rxjs';
 
+import { StorageKey } from '../enums/storageKey';
+
 import { EnvironmentUrls } from '../models/domain/environmentUrls';
 
-import { ConstantsService } from './constants.service';
-
+import { AccountService } from '../abstractions/account.service';
 import { EnvironmentService as EnvironmentServiceAbstraction, Urls } from '../abstractions/environment.service';
-import { StorageService } from '../abstractions/storage.service';
 
 export class EnvironmentService implements EnvironmentServiceAbstraction {
 
@@ -20,7 +20,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     private notificationsUrl: string;
     private eventsUrl: string;
 
-    constructor(private storageService: StorageService) {}
+    constructor(private accountService: AccountService) {}
 
     hasBaseUrl() {
         return this.baseUrl != null;
@@ -104,7 +104,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     }
 
     async setUrlsFromStorage(): Promise<void> {
-        const urlsObj: any = await this.storageService.get(ConstantsService.environmentUrlsKey);
+        const urlsObj: any = await this.accountService.getSetting<any>(StorageKey.EnvironmentUrls);
         const urls = urlsObj || {
             base: null,
             api: null,
@@ -140,7 +140,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
         urls.events = this.formatUrl(urls.events);
 
         if (saveSettings) {
-            await this.storageService.save(ConstantsService.environmentUrlsKey, {
+            await this.accountService.saveSetting(StorageKey.EnvironmentUrls, {
                 base: urls.base,
                 api: urls.api,
                 identity: urls.identity,
