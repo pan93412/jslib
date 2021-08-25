@@ -202,7 +202,7 @@ export class WindowMain {
             const bounds = win.getBounds();
 
             if (this.windowStates[configKey] == null) {
-                this.windowStates[configKey] = await this.storageService.get<any>(configKey);
+                this.windowStates[configKey] = await this.accountService.getSetting<any>(configKey);
                 if (this.windowStates[configKey] == null) {
                     this.windowStates[configKey] = {};
                 }
@@ -218,12 +218,12 @@ export class WindowMain {
                 this.windowStates[configKey].height = bounds.height;
             }
 
-            await this.storageService.save(configKey, this.windowStates[configKey]);
+            await this.accountService.saveSetting(configKey, this.windowStates[configKey]);
         } catch (e) { }
     }
 
     private async getWindowState(configKey: string, defaultWidth: number, defaultHeight: number) {
-        let state = await this.storageService.get<any>(configKey);
+        let state = await this.accountService.getSetting<any>(configKey);
 
         const isValid = state != null && (this.stateHasBounds(state) || state.isMaximized);
         let displayBounds: Electron.Rectangle = null;
