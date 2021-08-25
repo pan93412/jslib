@@ -179,7 +179,7 @@ export class ElectronPlatformUtilsService implements PlatformUtilsService {
     }
 
     supportsBiometric(): Promise<boolean> {
-        return this.storageService.get(ElectronConstants.enableBiometric);
+        return this.storageService.get(StorageKey.EnableBiometric);
     }
 
     authenticateBiometric(): Promise<boolean> {
