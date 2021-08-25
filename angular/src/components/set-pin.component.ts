@@ -1,13 +1,15 @@
 import { Directive } from '@angular/core';
 
+import { AccountService } from 'jslib-common/abstractions/account.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
-import { StorageService } from 'jslib-common/abstractions/storage.service';
-import { UserService } from 'jslib-common/abstractions/user.service';
 import { VaultTimeoutService } from 'jslib-common/abstractions/vaultTimeout.service';
 
-import { ConstantsService } from 'jslib-common/services/constants.service';
+import { KdfType } from 'jslib-common/enums/kdfType';
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 import { Utils } from 'jslib-common/misc/utils';
+
+import { SettingStorageOptions } from 'jslib-common/models/domain/settingStorageOptions';
 
 import { ModalRef } from './modal/modal.ref';
 
@@ -18,8 +20,8 @@ export class SetPinComponent {
     showPin = false;
     masterPassOnRestart = true;
 
-    constructor(private modalRef: ModalRef, private cryptoService: CryptoService, private userService: UserService,
-        private storageService: StorageService, private vaultTimeoutService: VaultTimeoutService) { }
+    constructor(private modalRef: ModalRef, private cryptoService: CryptoService,
+        private vaultTimeoutService: VaultTimeoutService, private accountService: AccountService) { }
 
     toggleVisibility() {
         this.showPin = !this.showPin;
@@ -30,18 +32,18 @@ export class SetPinComponent {
             this.modalRef.close(false);
         }
 
-        const kdf = await this.userService.getKdf();
-        const kdfIterations = await this.userService.getKdfIterations();
-        const email = await this.userService.getEmail();
+        const kdf = await this.accountService.getSetting<KdfType>(StorageKey.KdfType);
+        const kdfIterations = await this.accountService.getSetting<number>(StorageKey.KdfIterations);
+        const email = this.accountService.activeAccount?.email;
         const pinKey = await this.cryptoService.makePinKey(this.pin, email, kdf, kdfIterations);
         const key = await this.cryptoService.getKey();
         const pinProtectedKey = await this.cryptoService.encrypt(key.key, pinKey);
         if (this.masterPassOnRestart) {
             const encPin = await this.cryptoService.encrypt(this.pin);
-            await this.storageService.save(ConstantsService.protectedPin, encPin.encryptedString);
+            await this.accountService.saveSetting(StorageKey.ProtectedPin, encPin.encryptedString, { skipMemory: true } as SettingStorageOptions);
             this.vaultTimeoutService.pinProtectedKey = pinProtectedKey;
         } else {
-            await this.storageService.save(ConstantsService.pinProtectedKey, pinProtectedKey.encryptedString);
+            await this.accountService.saveSetting(StorageKey.PinProtectedKey, pinProtectedKey.encryptedString, { skipMemory: true } as SettingStorageOptions);
         }
 
         this.modalRef.close(true);
