@@ -1,4 +1,5 @@
 import { AccountService } from '../abstractions/account.service';
+import { OrganizationService } from '../abstractions/organization.service';
 import { PolicyService as PolicyServiceAbstraction } from '../abstractions/policy.service';
 
 import { PolicyData } from '../models/data/policyData';
@@ -17,7 +18,7 @@ import { ListResponse } from '../models/response/listResponse';
 import { PolicyResponse } from '../models/response/policyResponse';
 
 export class PolicyService implements PolicyServiceAbstraction {
-    constructor(private accountService: AccountService) {
+    constructor(private accountService: AccountService, private organizationService: OrganizationService) {
     }
 
     async clearCache(): Promise<void> {
@@ -167,7 +168,7 @@ export class PolicyService implements PolicyServiceAbstraction {
 
     async policyAppliesToUser(policyType: PolicyType, policyFilter?: (policy: Policy) => boolean) {
         const policies = await this.getAll(policyType);
-        const organizations = await this.accountService.getAllOrganizations();
+        const organizations = await this.organizationService.getAll();
         let filteredPolicies;
 
         if (policyFilter != null) {

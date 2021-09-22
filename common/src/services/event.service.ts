@@ -9,12 +9,13 @@ import { AccountService } from '../abstractions/account.service';
 import { ApiService } from '../abstractions/api.service';
 import { CipherService } from '../abstractions/cipher.service';
 import { EventService as EventServiceAbstraction } from '../abstractions/event.service';
+import { OrganizationService } from '../abstractions/organization.service';
 
 export class EventService implements EventServiceAbstraction {
     private inited = false;
 
     constructor(private apiService: ApiService, private cipherService: CipherService,
-        private accountService: AccountService) { }
+        private accountService: AccountService, private organizationService: OrganizationService) { }
 
     init(checkOnInterval: boolean) {
         if (this.inited) {
@@ -33,7 +34,7 @@ export class EventService implements EventServiceAbstraction {
         if (!authed) {
             return;
         }
-        const organizations = await this.accountService.getAllOrganizations();
+        const organizations = await this.organizationService.getAll();
         if (organizations == null) {
             return;
         }

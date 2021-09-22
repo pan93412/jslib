@@ -1,8 +1,6 @@
 import { StorageKey } from '../enums/storageKey';
 
 import { Account } from '../models/domain/account';
-import { Organization } from '../models/domain/organization';
-import { Provider } from '../models/domain/provider';
 import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 
 export abstract class AccountService {
@@ -15,9 +13,4 @@ export abstract class AccountService {
     removeSetting: (key: StorageKey | string, options?: SettingStorageOptions) => Promise<any>;
     hasSetting: (key: StorageKey | string, options?: SettingStorageOptions) => Promise<boolean>;
     getSetting: <T>(key: StorageKey | string, options?: SettingStorageOptions) => Promise<T>;
-    getOrganization: (id: string) => Promise<Organization>;
-    getOrganizationByIdentifier: (identifier: string) => Promise<Organization>;
-    getAllOrganizations: () => Promise<Organization[]>;
-    getProvider: (id: string) => Promise<Provider>;
-    getAllProviders: () => Promise<Provider[]>;
 }

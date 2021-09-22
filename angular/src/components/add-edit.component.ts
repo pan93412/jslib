@@ -12,7 +12,6 @@ import { EventType } from 'jslib-common/enums/eventType';
 import { OrganizationUserStatusType } from 'jslib-common/enums/organizationUserStatusType';
 import { PolicyType } from 'jslib-common/enums/policyType';
 import { SecureNoteType } from 'jslib-common/enums/secureNoteType';
-import { StorageKey } from 'jslib-common/enums/storageKey';
 import { UriMatchType } from 'jslib-common/enums/uriMatchType';
 
 import { AccountService } from 'jslib-common/abstractions/account.service';
@@ -23,6 +22,7 @@ import { EventService } from 'jslib-common/abstractions/event.service';
 import { FolderService } from 'jslib-common/abstractions/folder.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { MessagingService } from 'jslib-common/abstractions/messaging.service';
+import { OrganizationService } from 'jslib-common/abstractions/organization.service';
 import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.service';
 import { PolicyService } from 'jslib-common/abstractions/policy.service';
 import { StateService } from 'jslib-common/abstractions/state.service';
@@ -89,7 +89,7 @@ export class AddEditComponent implements OnInit {
         protected auditService: AuditService, protected stateService: StateService,
         protected collectionService: CollectionService, protected messagingService: MessagingService,
         protected eventService: EventService, protected policyService: PolicyService,
-        protected accountService: AccountService) {
+        protected accountService: AccountService, private organizationService: OrganizationService) {
         this.typeOptions = [
             { name: i18nService.t('typeLogin'), value: CipherType.Login },
             { name: i18nService.t('typeCard'), value: CipherType.Card },
@@ -153,7 +153,7 @@ export class AddEditComponent implements OnInit {
     async init() {
         const myEmail = this.accountService.activeAccount?.email;
         this.ownershipOptions.push({ name: myEmail, value: null });
-        const orgs = await this.accountService.getAllOrganizations();
+        const orgs = await this.organizationService.getAll();
         orgs.sort(Utils.getSortFunction(this.i18nService, 'name')).forEach(o => {
             if (o.enabled && o.status === OrganizationUserStatusType.Confirmed) {
                 this.ownershipOptions.push({ name: o.name, value: o.id });
@@ -425,7 +425,7 @@ export class AddEditComponent implements OnInit {
         }
         if (this.cipher.organizationId != null) {
             this.collections = this.writeableCollections.filter(c => c.organizationId === this.cipher.organizationId);
-            const org = await this.accountService.getOrganization(this.cipher.organizationId);
+            const org = await this.organizationService.get(this.cipher.organizationId);
             if (org != null) {
                 this.cipher.organizationUseTotp = org.useTotp;
             }
