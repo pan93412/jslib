@@ -8,7 +8,7 @@ import { StorageKey } from '../enums/storageKey';
 import { EncArrayBuffer } from '../models/domain/encArrayBuffer';
 import { EncryptedObject } from '../models/domain/encryptedObject';
 import { EncString } from '../models/domain/encString';
-import { KeySuffixOptions, SettingStorageOptions } from '../models/domain/settingStorageOptions';
+import { KeySuffixOptions } from '../models/domain/settingStorageOptions';
 import { SymmetricCryptoKey } from '../models/domain/symmetricCryptoKey';
 
 
@@ -37,11 +37,13 @@ export class CryptoService implements CryptoServiceAbstraction {
             skipDisk: true,
         } as SettingStorageOptions);
 
-        const storeOnDisk = await this.shouldStoreKey('auto') || await this.shouldStoreKey('biometric');
-        if (storeOnDisk) {
+        let suffix: KeySuffixOptions = await this.shouldStoreKey('auto') ? 'auto' : null;
+        suffix = suffix ?? await this.shouldStoreKey('biometric') ? 'biometric' : null;
+        if (suffix) {
             await this.accountService.saveSetting(StorageKey.CryptoMasterKey, key.keyB64, {
                 skipMemory: true,
                 useSecureStorage: true,
+                keySuffix: suffix,
             } as SettingStorageOptions);
         } else {
             await this.accountService.removeSetting(StorageKey.CryptoMasterKey, { skipMemory: true } as SettingStorageOptions);

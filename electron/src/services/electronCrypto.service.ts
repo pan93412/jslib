@@ -6,7 +6,6 @@ import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.se
 import { StorageKey } from 'jslib-common/enums/storageKey';
 
 import { KeySuffixOptions, SettingStorageOptions } from 'jslib-common/models/domain/settingStorageOptions';
-import { SymmetricCryptoKey } from 'jslib-common/models/domain/symmetricCryptoKey';
 
 import { CryptoService } from 'jslib-common/services/crypto.service';
 
@@ -20,20 +19,6 @@ export class ElectronCryptoService extends CryptoService {
     async hasKeyStored(keySuffix: KeySuffixOptions): Promise<boolean> {
         await this.upgradeSecurelyStoredKey();
         return super.hasKeyStored(keySuffix);
-    }
-
-    protected async storeKey(key: SymmetricCryptoKey) {
-        if (await this.shouldStoreKey('auto')) {
-            await this.accountService.saveSetting(StorageKey.CryptoMasterKey, key.keyB64, { keySuffix: 'auto', skipMemory: true, useSecureStorage: true } as SettingStorageOptions);
-        } else {
-            this.clearStoredKey('auto');
-        }
-
-        if (await this.shouldStoreKey('biometric')) {
-            await this.accountService.saveSetting(StorageKey.CryptoMasterKey, key.keyB64, { keySuffix: 'biometric', skipMemory: true, useSecureStorage: true } as SettingStorageOptions);
-        } else {
-            this.clearStoredKey('biometric');
-        }
     }
 
     protected async retrieveKeyFromStorage(keySuffix: KeySuffixOptions) {
