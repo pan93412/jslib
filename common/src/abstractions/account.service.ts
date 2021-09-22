@@ -19,4 +19,5 @@ export abstract class AccountService {
     getOrganizationByIdentifier: (identifier: string) => Promise<Organization>;
     getAllOrganizations: () => Promise<Organization[]>;
     getProvider: (id: string) => Promise<Provider>;
+    getAllProviders: () => Promise<Provider[]>;
 }
