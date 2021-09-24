@@ -1,4 +1,4 @@
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { CipherService } from '../abstractions/cipher.service';
 import { CollectionService } from '../abstractions/collection.service';
 import { CryptoService } from '../abstractions/crypto.service';
@@ -26,7 +26,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
         private collectionService: CollectionService, private cryptoService: CryptoService,
         protected platformUtilsService: PlatformUtilsService, private messagingService: MessagingService,
         private searchService: SearchService, private tokenService: TokenService,
-        private policyService: PolicyService, private accountService: AccountService,
+        private policyService: PolicyService, private activeAccountService: ActiveAccountService,
         private lockedCallback: () => Promise<void> = null, private loggedOutCallback: () => Promise<void> = null) {
     }
 
@@ -63,7 +63,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
         }
 
         // "is logged out check" - similar to isLocked, below
-        const authed = this.accountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
         if (!authed) {
             return;
         }
@@ -77,7 +77,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
             return;
         }
 
-        const lastActive = await this.accountService.getSetting<number>(StorageKey.LastActive);
+        const lastActive = await this.activeAccountService.get<number>(StorageKey.LastActive);
         if (lastActive == null) {
             return;
         }
@@ -86,13 +86,13 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
         const diffSeconds = ((new Date()).getTime() - lastActive) / 1000;
         if (diffSeconds >= vaultTimeoutSeconds) {
             // Pivot based on the saved vault timeout action
-            const timeoutAction = await this.accountService.getSetting<string>(StorageKey.VaultTimeoutAction);
+            const timeoutAction = await this.activeAccountService.get<string>(StorageKey.VaultTimeoutAction);
             timeoutAction === 'logOut' ? await this.logOut() : await this.lock(true);
         }
     }
 
     async lock(allowSoftLock = false): Promise<void> {
-        const authed = this.accountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
         if (!authed) {
             return;
         }
@@ -121,24 +121,24 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
     }
 
     async setVaultTimeoutOptions(timeout: number, action: string): Promise<void> {
-        await this.accountService.saveSetting(StorageKey.VaultTimeout, timeout);
-        await this.accountService.saveSetting(StorageKey.VaultTimeoutAction, action);
+        await this.activeAccountService.save(StorageKey.VaultTimeout, timeout);
+        await this.activeAccountService.save(StorageKey.VaultTimeoutAction, action);
         await this.cryptoService.toggleKey();
         await this.tokenService.toggleTokens();
     }
 
     async isPinLockSet(): Promise<[boolean, boolean]> {
-        const protectedPin = await this.accountService.getSetting<string>(StorageKey.ProtectedPin);
-        const pinProtectedKey = await this.accountService.getSetting<string>(StorageKey.PinProtectedKey);
+        const protectedPin = await this.activeAccountService.get<string>(StorageKey.ProtectedPin);
+        const pinProtectedKey = await this.activeAccountService.get<string>(StorageKey.PinProtectedKey);
         return [protectedPin != null, pinProtectedKey != null];
     }
 
     async isBiometricLockSet(): Promise<boolean> {
-        return await this.accountService.getSetting<boolean>(StorageKey.BiometricUnlock);
+        return await this.activeAccountService.get<boolean>(StorageKey.BiometricUnlock);
     }
 
     async getVaultTimeout(): Promise<number> {
-        const vaultTimeout = await this.accountService.getSetting<number>(StorageKey.VaultTimeout);
+        const vaultTimeout = await this.activeAccountService.get<number>(StorageKey.VaultTimeout);
 
         if (await this.policyService.policyAppliesToUser(PolicyType.MaximumVaultTimeout)) {
             const policy = await this.policyService.getAll(PolicyType.MaximumVaultTimeout);
@@ -151,7 +151,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
 
             // We really shouldn't need to set the value here, but multiple services relies on this value being correct.
             if (vaultTimeout !== timeout) {
-                await this.accountService.saveSetting(StorageKey.VaultTimeout, timeout);
+                await this.activeAccountService.save(StorageKey.VaultTimeout, timeout);
             }
 
             return timeout;
@@ -163,6 +163,6 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
     clear(): Promise<any> {
         this.everBeenUnlocked = false;
         this.pinProtectedKey = null;
-        return this.accountService.removeSetting(StorageKey.ProtectedPin);
+        return this.activeAccountService.remove(StorageKey.ProtectedPin);
     }
 }

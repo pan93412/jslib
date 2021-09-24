@@ -1,4 +1,5 @@
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
+import { OrganizationService as OrganizationServiceAbstraction } from '../abstractions/organization.service';
 import { OrganizationData } from '../models/data/organizationData';
 
 import { Organization } from '../models/domain/organization';
@@ -6,12 +7,12 @@ import { Organization } from '../models/domain/organization';
 import { StorageKey } from '../enums/storageKey';
 
 
-export class OrganizationService {//implements AccountServiceAbstraction {
-    constructor(private accountService: AccountService) {
+export class OrganizationService implements OrganizationServiceAbstraction {
+    constructor(private activeAccountService: ActiveAccountService) {
     }
 
     async get(id: string): Promise<Organization> {
-        const organizations = await this.accountService.getSetting<{ [id: string]: OrganizationData; }>(
+        const organizations = await this.activeAccountService.get<{ [id: string]: OrganizationData; }>(
             StorageKey.Organizations);
         if (organizations == null || !organizations.hasOwnProperty(id)) {
             return null;
@@ -30,7 +31,7 @@ export class OrganizationService {//implements AccountServiceAbstraction {
     }
 
     async getAll(): Promise<Organization[]> {
-        const organizations = await this.accountService.getSetting<{ [id: string]: OrganizationData; }>(
+        const organizations = await this.activeAccountService.get<{ [id: string]: OrganizationData; }>(
             StorageKey.Organizations);
         const response: Organization[] = [];
         for (const id in organizations) {

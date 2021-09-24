@@ -1,4 +1,4 @@
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { OrganizationService } from '../abstractions/organization.service';
 import { PolicyService as PolicyServiceAbstraction } from '../abstractions/policy.service';
 
@@ -18,16 +18,16 @@ import { ListResponse } from '../models/response/listResponse';
 import { PolicyResponse } from '../models/response/policyResponse';
 
 export class PolicyService implements PolicyServiceAbstraction {
-    constructor(private accountService: AccountService, private organizationService: OrganizationService) {
+    constructor(private activeAccountService: ActiveAccountService, private organizationService: OrganizationService) {
     }
 
     async clearCache(): Promise<void> {
-        await this.accountService.removeSetting(StorageKey.Policies, { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.remove(StorageKey.Policies, { skipDisk: true } as SettingStorageOptions);
     }
 
     async getAll(type?: PolicyType): Promise<Policy[]> {
-        if (!await this.accountService.hasSetting(StorageKey.Policies, { skipDisk: true } as SettingStorageOptions)) {
-            const policies = await this.accountService.getSetting<{ [id: string]: PolicyData; }>(
+        if (!await this.activeAccountService.has(StorageKey.Policies, { skipDisk: true } as SettingStorageOptions)) {
+            const policies = await this.activeAccountService.get<{ [id: string]: PolicyData; }>(
                 StorageKey.Policies, { skipMemory: true } as SettingStorageOptions);
             const response: Policy[] = [];
             for (const id in policies) {
@@ -35,9 +35,9 @@ export class PolicyService implements PolicyServiceAbstraction {
                     response.push(new Policy(policies[id]));
                 }
             }
-            await this.accountService.saveSetting(StorageKey.Policies, response, { skipDisk : true } as SettingStorageOptions);
+            await this.activeAccountService.save(StorageKey.Policies, response, { skipDisk : true } as SettingStorageOptions);
         }
-        const policyCache = await this.accountService.getSetting<Policy[]>(StorageKey.Policies);
+        const policyCache = await this.activeAccountService.get<Policy[]>(StorageKey.Policies);
         if (type != null) {
             return policyCache.filter(policy => policy.type === type);
         } else {
@@ -51,12 +51,12 @@ export class PolicyService implements PolicyServiceAbstraction {
     }
 
     async replace(policies: { [id: string]: PolicyData; }): Promise<any> {
-        await this.accountService.removeSetting(StorageKey.Policies);
-        await this.accountService.saveSetting(StorageKey.Policies, policies, { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.remove(StorageKey.Policies);
+        await this.activeAccountService.save(StorageKey.Policies, policies, { skipMemory: true } as SettingStorageOptions);
     }
 
     async clear(): Promise<any> {
-        await this.accountService.removeSetting(StorageKey.Policies);
+        await this.activeAccountService.remove(StorageKey.Policies);
     }
 
     async getMasterPasswordPolicyOptions(policies?: Policy[]): Promise<MasterPasswordPolicyOptions> {

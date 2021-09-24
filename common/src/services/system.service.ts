@@ -1,4 +1,4 @@
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { MessagingService } from '../abstractions/messaging.service';
 import { PlatformUtilsService } from '../abstractions/platformUtils.service';
 import { SystemService as SystemServiceAbstraction } from '../abstractions/system.service';
@@ -15,7 +15,7 @@ export class SystemService implements SystemServiceAbstraction {
 
     constructor(private vaultTimeoutService: VaultTimeoutService, private messagingService: MessagingService,
         private platformUtilsService: PlatformUtilsService, private reloadCallback: () => Promise<void> = null,
-        private accountService: AccountService) {
+        private activeAccountService: ActiveAccountService) {
     }
 
     startProcessReload(): void {
@@ -27,14 +27,14 @@ export class SystemService implements SystemServiceAbstraction {
         this.cancelProcessReload();
         this.reloadInterval = setInterval(async () => {
             let doRefresh = false;
-            const lastActive = await this.accountService.getSetting<number>(StorageKey.LastActive);
+            const lastActive = await this.activeAccountService.get<number>(StorageKey.LastActive);
             if (lastActive != null) {
                 const diffSeconds = (new Date()).getTime() - lastActive;
                 // Don't refresh if they are still active in the window
                 doRefresh = diffSeconds >= 5000;
             }
             const biometricLockedFingerprintValidated =
-                await this.accountService.getSetting<boolean>(StorageKey.BiometricFingerprintValidated) && this.vaultTimeoutService.biometricLocked;
+                await this.activeAccountService.get<boolean>(StorageKey.BiometricFingerprintValidated) && this.vaultTimeoutService.biometricLocked;
             if (doRefresh && !biometricLockedFingerprintValidated) {
                 clearInterval(this.reloadInterval);
                 this.reloadInterval = null;
@@ -61,7 +61,7 @@ export class SystemService implements SystemServiceAbstraction {
         if (Utils.isNullOrWhitespace(clipboardValue)) {
             return;
         }
-        this.accountService.getSetting<number>(StorageKey.ClearClipboard).then(clearSeconds => {
+        this.activeAccountService.get<number>(StorageKey.ClearClipboard).then(clearSeconds => {
             if (clearSeconds == null) {
                 return;
             }

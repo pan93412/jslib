@@ -8,7 +8,7 @@ import {
 
 import { OrganizationUserStatusType } from 'jslib-common/enums/organizationUserStatusType';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { CipherService } from 'jslib-common/abstractions/cipher.service';
 import { CollectionService } from 'jslib-common/abstractions/collection.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
@@ -36,7 +36,7 @@ export class ShareComponent implements OnInit {
 
     constructor(protected collectionService: CollectionService, protected platformUtilsService: PlatformUtilsService,
         protected i18nService: I18nService, protected cipherService: CipherService,
-        protected accountService: AccountService, protected organizationService: OrganizationService) { }
+        protected activeAccountService: ActiveAccountService, protected organizationService: OrganizationService) { }
 
     async ngOnInit() {
         await this.load();

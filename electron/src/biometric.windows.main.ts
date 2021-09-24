@@ -3,7 +3,7 @@ import forceFocus from 'forcefocus';
 
 import { WindowMain } from './window.main';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { BiometricMain } from 'jslib-common/abstractions/biometric.main';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 
@@ -15,7 +15,7 @@ export default class BiometricWindowsMain implements BiometricMain {
     private windowsSecurityCredentialsUiModule: any;
 
     constructor(private i18nservice: I18nService, private windowMain: WindowMain,
-        private accountService: AccountService) { }
+        private activeAccountService: ActiveAccountService) { }
 
     async init() {
         this.windowsSecurityCredentialsUiModule = this.getWindowsSecurityCredentialsUiModule();
@@ -26,9 +26,9 @@ export default class BiometricWindowsMain implements BiometricMain {
             // store error state so we can let the user know on the settings page
             this.isError = true;
         }
-        this.accountService.saveSetting(StorageKey.EnableBiometric, supportsBiometric);
-        this.accountService.saveSetting(StorageKey.BiometricText, 'unlockWithWindowsHello');
-        this.accountService.saveSetting(StorageKey.NoAutoPromptBiometricsText, 'noAutoPromptWindowsHello');
+        this.activeAccountService.save(StorageKey.EnableBiometric, supportsBiometric);
+        this.activeAccountService.save(StorageKey.BiometricText, 'unlockWithWindowsHello');
+        this.activeAccountService.save(StorageKey.NoAutoPromptBiometricsText, 'noAutoPromptWindowsHello');
 
         ipcMain.on('biometric', async (event: any, message: any) => {
             event.returnValue = await this.authenticateBiometric();

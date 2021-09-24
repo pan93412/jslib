@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
@@ -32,9 +32,9 @@ export class UpdateTempPasswordComponent extends BaseChangePasswordComponent {
     constructor(i18nService: I18nService, platformUtilsService: PlatformUtilsService,
         passwordGenerationService: PasswordGenerationService, policyService: PolicyService,
         cryptoService: CryptoService, messagingService: MessagingService,
-        private apiService: ApiService, accountService: AccountService) {
+        private apiService: ApiService, activeAccountService: ActiveAccountService) {
         super(i18nService, cryptoService, messagingService, passwordGenerationService,
-            platformUtilsService, policyService, accountService);
+            platformUtilsService, policyService, activeAccountService);
     }
 
     togglePassword(confirmField: boolean) {
@@ -44,9 +44,9 @@ export class UpdateTempPasswordComponent extends BaseChangePasswordComponent {
 
     async setupSubmitActions(): Promise<boolean> {
         this.enforcedPolicyOptions = await this.policyService.getMasterPasswordPolicyOptions();
-        this.email = this.accountService.activeAccount.email;
-        this.kdf = await this.accountService.getSetting<KdfType>(StorageKey.KdfType);
-        this.kdfIterations = await this.accountService.getSetting<number>(StorageKey.KdfIterations);
+        this.email = this.activeAccountService.activeAccount.email;
+        this.kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
+        this.kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
         return true;
     }
 

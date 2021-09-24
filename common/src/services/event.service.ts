@@ -5,7 +5,7 @@ import { EventData } from '../models/data/eventData';
 
 import { EventRequest } from '../models/request/eventRequest';
 
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { ApiService } from '../abstractions/api.service';
 import { CipherService } from '../abstractions/cipher.service';
 import { EventService as EventServiceAbstraction } from '../abstractions/event.service';
@@ -15,7 +15,7 @@ export class EventService implements EventServiceAbstraction {
     private inited = false;
 
     constructor(private apiService: ApiService, private cipherService: CipherService,
-        private accountService: AccountService, private organizationService: OrganizationService) { }
+        private activeAccountService: ActiveAccountService, private organizationService: OrganizationService) { }
 
     init(checkOnInterval: boolean) {
         if (this.inited) {
@@ -30,7 +30,7 @@ export class EventService implements EventServiceAbstraction {
     }
 
     async collect(eventType: EventType, cipherId: string = null, uploadImmediately = false): Promise<any> {
-        const authed = this.accountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
         if (!authed) {
             return;
         }
@@ -48,7 +48,7 @@ export class EventService implements EventServiceAbstraction {
                 return;
             }
         }
-        let eventCollection = await this.accountService.getSetting<EventData[]>(StorageKey.EventCollectionKey);
+        let eventCollection = await this.activeAccountService.get<EventData[]>(StorageKey.EventCollectionKey);
         if (eventCollection == null) {
             eventCollection = [];
         }
@@ -57,18 +57,18 @@ export class EventService implements EventServiceAbstraction {
         event.cipherId = cipherId;
         event.date = new Date().toISOString();
         eventCollection.push(event);
-        await this.accountService.saveSetting(StorageKey.EventCollectionKey, eventCollection);
+        await this.activeAccountService.save(StorageKey.EventCollectionKey, eventCollection);
         if (uploadImmediately) {
             await this.uploadEvents();
         }
     }
 
     async uploadEvents(): Promise<any> {
-        const authed = this.accountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
         if (!authed) {
             return;
         }
-        const eventCollection = await this.accountService.getSetting<EventData[]>(StorageKey.EventCollectionKey);
+        const eventCollection = await this.activeAccountService.get<EventData[]>(StorageKey.EventCollectionKey);
         if (eventCollection == null || eventCollection.length === 0) {
             return;
         }
@@ -86,6 +86,6 @@ export class EventService implements EventServiceAbstraction {
     }
 
     async clearEvents(): Promise<any> {
-        await this.accountService.removeSetting(StorageKey.EventCollectionKey);
+        await this.activeAccountService.remove(StorageKey.EventCollectionKey);
     }
 }

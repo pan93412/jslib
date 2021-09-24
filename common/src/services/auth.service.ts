@@ -16,7 +16,8 @@ import { TokenRequest } from '../models/request/tokenRequest';
 import { IdentityTokenResponse } from '../models/response/identityTokenResponse';
 import { IdentityTwoFactorResponse } from '../models/response/identityTwoFactorResponse';
 
-import { AccountService } from '../abstractions/account.service';
+import { AccountsManagementService } from '../abstractions/accountsManagement.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { ApiService } from '../abstractions/api.service';
 import { AppIdService } from '../abstractions/appId.service';
 import { AuthService as AuthServiceAbstraction } from '../abstractions/auth.service';
@@ -98,8 +99,8 @@ export class AuthService implements AuthServiceAbstraction {
         protected tokenService: TokenService, protected appIdService: AppIdService,
         private i18nService: I18nService, protected platformUtilsService: PlatformUtilsService,
         private messagingService: MessagingService, private vaultTimeoutService: VaultTimeoutService,
-        private logService: LogService, private accountService: AccountService,
-        private setCryptoKeys = true) {
+        private logService: LogService, private activeAccountService: ActiveAccountService,
+        private accountsManagementService: AccountsManagementService, private setCryptoKeys = true) {
     }
 
     init() {
@@ -346,12 +347,12 @@ export class AuthService implements AuthServiceAbstraction {
         result.forcePasswordReset = tokenResponse.forcePasswordReset;
 
         const accountInformation = await this.tokenService.decodeToken(tokenResponse.accessToken);
-        await this.accountService.addAccount(new Account(
+        await this.accountsManagementService.add(new Account(
             accountInformation.sub, accountInformation.email,
             tokenResponse.kdf, tokenResponse.kdfIterations,
             clientId, clientSecret, tokenResponse.accessToken, tokenResponse.refreshToken));
 
-        await this.accountService.saveSetting(StorageKey.AccessToken,
+        await this.activeAccountService.save(StorageKey.AccessToken,
             tokenResponse.accessToken, { skipMemory: true } as SettingStorageOptions);
 
         if (tokenResponse.twoFactorToken != null) {

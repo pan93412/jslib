@@ -3,7 +3,7 @@ import * as signalRMsgPack from '@microsoft/signalr-protocol-msgpack';
 
 import { NotificationType } from '../enums/notificationType';
 
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { ApiService } from '../abstractions/api.service';
 import { AppIdService } from '../abstractions/appId.service';
 import { EnvironmentService } from '../abstractions/environment.service';
@@ -30,7 +30,7 @@ export class NotificationsService implements NotificationsServiceAbstraction {
     constructor(private syncService: SyncService, private appIdService: AppIdService,
         private apiService: ApiService, private vaultTimeoutService: VaultTimeoutService,
         private environmentService: EnvironmentService, private logoutCallback: () => Promise<void>,
-        private logService: LogService, private accountService: AccountService) {
+        private logService: LogService, private activeAccountService: ActiveAccountService) {
         this.environmentService.urls.subscribe(() => {
             if (!this.inited) {
                 return;
@@ -117,9 +117,9 @@ export class NotificationsService implements NotificationsServiceAbstraction {
             return;
         }
 
-        const isAuthenticated = this.accountService.activeAccount?.isAuthenticated;
+        const isAuthenticated = this.activeAccountService.activeAccount?.isAuthenticated;
         const payloadUserId = notification.payload.userId || notification.payload.UserId;
-        const myUserId = this.accountService.activeAccount?.userId;
+        const myUserId = this.activeAccountService.activeAccount?.userId;
         if (isAuthenticated && payloadUserId != null && payloadUserId !== myUserId) {
             return;
         }
@@ -200,7 +200,7 @@ export class NotificationsService implements NotificationsServiceAbstraction {
     }
 
     private async isAuthedAndUnlocked() {
-        if (this.accountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.activeAccount?.isAuthenticated) {
             const locked = await this.vaultTimeoutService.isLocked();
             return !locked;
         }

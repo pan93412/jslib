@@ -1,6 +1,6 @@
 import { Directive, OnInit } from '@angular/core';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.service';
@@ -12,10 +12,10 @@ export class PremiumComponent implements OnInit {
     refreshPromise: Promise<any>;
 
     constructor(protected i18nService: I18nService, protected platformUtilsService: PlatformUtilsService,
-        protected apiService: ApiService, protected accountService: AccountService) { }
+        protected apiService: ApiService, protected activeAccountService: ActiveAccountService) { }
 
     async ngOnInit() {
-        this.isPremium = this.accountService.activeAccount.canAccessPremium;
+        this.isPremium = this.activeAccountService.activeAccount.canAccessPremium;
     }
 
     async refresh() {
@@ -23,7 +23,7 @@ export class PremiumComponent implements OnInit {
             this.refreshPromise = this.apiService.refreshIdentityToken();
             await this.refreshPromise;
             this.platformUtilsService.showToast('success', null, this.i18nService.t('refreshComplete'));
-            this.isPremium = this.accountService.activeAccount.canAccessPremium;
+            this.isPremium = this.activeAccountService.activeAccount.canAccessPremium;
         } catch { }
     }
 

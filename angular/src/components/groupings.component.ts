@@ -13,7 +13,7 @@ import { FolderView } from 'jslib-common/models/view/folderView';
 
 import { TreeNode } from 'jslib-common/models/domain/treeNode';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { CollectionService } from 'jslib-common/abstractions/collection.service';
 import { FolderService } from 'jslib-common/abstractions/folder.service';
 
@@ -50,10 +50,10 @@ export class GroupingsComponent {
     private collapsedGroupings: Set<string>;
 
     constructor(protected collectionService: CollectionService, protected folderService: FolderService,
-        private accountService: AccountService) { }
+        private activeAccountService: ActiveAccountService) { }
 
     async load(setLoaded = true) {
-        const collapsedGroupings = await this.accountService.getSetting<string[]>(StorageKey.CollapsedGroupings);
+        const collapsedGroupings = await this.activeAccountService.get<string[]>(StorageKey.CollapsedGroupings);
         if (collapsedGroupings == null) {
             this.collapsedGroupings = new Set<string>();
         } else {
@@ -154,7 +154,7 @@ export class GroupingsComponent {
         } else {
             this.collapsedGroupings.add(id);
         }
-        await this.accountService.saveSetting(StorageKey.CollapsedGroupings, this.collapsedGroupings);
+        await this.activeAccountService.save(StorageKey.CollapsedGroupings, this.collapsedGroupings);
     }
 
     isCollapsed(grouping: FolderView | CollectionView, idPrefix = '') {

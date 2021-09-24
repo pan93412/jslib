@@ -8,7 +8,7 @@ import {
 } from 'electron';
 import * as path from 'path';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 
 import { StorageKey } from 'jslib-common/enums/storageKey';
@@ -25,7 +25,7 @@ export class TrayMain {
     private pressedIcon: Electron.NativeImage;
 
     constructor(private windowMain: WindowMain, private i18nService: I18nService,
-        private accountService: AccountService) {
+        private activeAccountService: ActiveAccountService) {
         if (process.platform === 'win32') {
             this.icon = path.join(__dirname, '/images/icon.ico');
         } else if (process.platform === 'darwin') {
@@ -56,21 +56,21 @@ export class TrayMain {
         }
 
         this.contextMenu = Menu.buildFromTemplate(menuItemOptions);
-        if (await this.accountService.getSetting<boolean>(StorageKey.EnableTrayKey)) {
+        if (await this.activeAccountService.get<boolean>(StorageKey.EnableTrayKey)) {
             this.showTray();
         }
     }
 
     setupWindowListeners(win: BrowserWindow) {
         win.on('minimize', async (e: Event) => {
-            if (await this.accountService.getSetting<boolean>(StorageKey.EnableMinimizeToTrayKey)) {
+            if (await this.activeAccountService.get<boolean>(StorageKey.EnableMinimizeToTrayKey)) {
                 e.preventDefault();
                 this.hideToTray();
             }
         });
 
         win.on('close', async (e: Event) => {
-            if (await this.accountService.getSetting<boolean>(StorageKey.EnableCloseToTrayKey)) {
+            if (await this.activeAccountService.get<boolean>(StorageKey.EnableCloseToTrayKey)) {
                 if (!this.windowMain.isQuitting) {
                     e.preventDefault();
                     this.hideToTray();
@@ -79,7 +79,7 @@ export class TrayMain {
         });
 
         win.on('show', async (e: Event) => {
-            const enableTray = await this.accountService.getSetting<boolean>(StorageKey.EnableTrayKey);
+            const enableTray = await this.activeAccountService.get<boolean>(StorageKey.EnableTrayKey);
             if (!enableTray) {
                 setTimeout(() =>  this.removeTray(false), 100);
             }
@@ -104,7 +104,7 @@ export class TrayMain {
         if (this.windowMain.win != null) {
             this.windowMain.win.hide();
         }
-        if (this.isDarwin() && !await this.accountService.getSetting<boolean>(StorageKey.AlwaysShowDock)) {
+        if (this.isDarwin() && !await this.activeAccountService.get<boolean>(StorageKey.AlwaysShowDock)) {
             this.hideDock();
         }
     }
@@ -168,7 +168,7 @@ export class TrayMain {
         }
         if (this.windowMain.win.isVisible()) {
             this.windowMain.win.hide();
-            if (this.isDarwin() && !await this.accountService.getSetting<boolean>(StorageKey.AlwaysShowDock)) {
+            if (this.isDarwin() && !await this.activeAccountService.get<boolean>(StorageKey.AlwaysShowDock)) {
                 this.hideDock();
             }
         } else {

@@ -4,7 +4,7 @@ import {
     Router
 } from '@angular/router';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
@@ -45,9 +45,9 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
         messagingService: MessagingService, passwordGenerationService: PasswordGenerationService,
         platformUtilsService: PlatformUtilsService, policyService: PolicyService,
         protected router: Router, private apiService: ApiService,
-        private syncService: SyncService, private route: ActivatedRoute, accountService: AccountService) {
+        private syncService: SyncService, private route: ActivatedRoute, activeAccountService: ActiveAccountService) {
         super(i18nService, cryptoService, messagingService, passwordGenerationService,
-            platformUtilsService, policyService, accountService);
+            platformUtilsService, policyService, activeAccountService);
     }
 
     async ngOnInit() {
@@ -106,7 +106,7 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
                     if (response == null) {
                         throw new Error(this.i18nService.t('resetPasswordOrgKeysError'));
                     }
-                    const userId = this.accountService.activeAccount.userId;
+                    const userId = this.activeAccountService.activeAccount.userId;
                     const publicKey = Utils.fromB64ToArray(response.publicKey);
 
                     // RSA Encrypt user's encKey.key with organization public key
@@ -142,8 +142,8 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
     }
 
     private async onSetPasswordSuccess(key: SymmetricCryptoKey, encKey: [SymmetricCryptoKey, EncString], keys: [string, EncString]) {
-        await this.accountService.saveSetting(StorageKey.KdfType, this.kdf);
-        await this.accountService.saveSetting(StorageKey.KdfIterations, this.kdfIterations);
+        await this.activeAccountService.save(StorageKey.KdfType, this.kdf);
+        await this.activeAccountService.save(StorageKey.KdfIterations, this.kdfIterations);
         await this.cryptoService.setKey(key);
         await this.cryptoService.setEncKey(encKey[1].encryptedString);
         await this.cryptoService.setEncPrivateKey(keys[1].encryptedString);

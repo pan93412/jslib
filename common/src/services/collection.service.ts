@@ -5,7 +5,7 @@ import { TreeNode } from '../models/domain/treeNode';
 
 import { CollectionView } from '../models/view/collectionView';
 
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { CollectionService as CollectionServiceAbstraction } from '../abstractions/collection.service';
 import { CryptoService } from '../abstractions/crypto.service';
 import { I18nService } from '../abstractions/i18n.service';
@@ -21,7 +21,7 @@ export class CollectionService implements CollectionServiceAbstraction {
     decryptedCollectionCache: CollectionView[];
 
     constructor(private cryptoService: CryptoService, private i18nService: I18nService,
-        private accountService: AccountService) {
+        private activeAccountService: ActiveAccountService) {
     }
 
     clearCache(): void {
@@ -58,7 +58,7 @@ export class CollectionService implements CollectionServiceAbstraction {
     }
 
     async get(id: string): Promise<Collection> {
-        const collections = await this.accountService.getSetting<{ [id: string]: CollectionData; }>(
+        const collections = await this.activeAccountService.get<{ [id: string]: CollectionData; }>(
             StorageKey.Collections);
         if (collections == null || !collections.hasOwnProperty(id)) {
             return null;
@@ -68,7 +68,7 @@ export class CollectionService implements CollectionServiceAbstraction {
     }
 
     async getAll(): Promise<Collection[]> {
-        const collections = await this.accountService.getSetting<{ [id: string]: CollectionData; }>(
+        const collections = await this.activeAccountService.get<{ [id: string]: CollectionData; }>(
             StorageKey.Collections);
         const response: Collection[] = [];
         for (const id in collections) {
@@ -115,7 +115,7 @@ export class CollectionService implements CollectionServiceAbstraction {
     }
 
     async upsert(collection: CollectionData | CollectionData[]): Promise<any> {
-        let collections = await this.accountService.getSetting<{ [id: string]: CollectionData; }>(
+        let collections = await this.activeAccountService.get<{ [id: string]: CollectionData; }>(
             StorageKey.Collections);
         if (collections == null) {
             collections = {};
@@ -130,22 +130,22 @@ export class CollectionService implements CollectionServiceAbstraction {
             });
         }
 
-        await this.accountService.saveSetting(StorageKey.Collections, collections);
+        await this.activeAccountService.save(StorageKey.Collections, collections);
         this.decryptedCollectionCache = null;
     }
 
     async replace(collections: { [id: string]: CollectionData; }): Promise<any> {
-        await this.accountService.saveSetting(StorageKey.Collections, collections);
+        await this.activeAccountService.save(StorageKey.Collections, collections);
         this.decryptedCollectionCache = null;
     }
 
     async clear(): Promise<any> {
-        await this.accountService.removeSetting(StorageKey.Collections);
+        await this.activeAccountService.remove(StorageKey.Collections);
         this.decryptedCollectionCache = null;
     }
 
     async delete(id: string | string[]): Promise<any> {
-        const collections = await this.accountService.getSetting<{ [id: string]: CollectionData; }>(
+        const collections = await this.activeAccountService.get<{ [id: string]: CollectionData; }>(
             StorageKey.Collections);
         if (collections == null) {
             return;
@@ -159,7 +159,7 @@ export class CollectionService implements CollectionServiceAbstraction {
             });
         }
 
-        await this.accountService.saveSetting(StorageKey.Collections, collections);
+        await this.activeAccountService.save(StorageKey.Collections, collections);
         this.decryptedCollectionCache = null;
     }
 }

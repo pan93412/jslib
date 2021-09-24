@@ -1,6 +1,6 @@
 import { Directive, OnInit } from '@angular/core';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { MessagingService } from 'jslib-common/abstractions/messaging.service';
@@ -32,10 +32,10 @@ export class ChangePasswordComponent implements OnInit {
     constructor(protected i18nService: I18nService, protected cryptoService: CryptoService,
         protected messagingService: MessagingService, protected passwordGenerationService: PasswordGenerationService,
         protected platformUtilsService: PlatformUtilsService, protected policyService: PolicyService,
-        protected accountService: AccountService) { }
+        protected activeAccountService: ActiveAccountService) { }
 
     async ngOnInit() {
-        this.email = this.accountService.activeAccount.email;
+        this.email = this.activeAccountService.activeAccount.email;
         this.enforcedPolicyOptions = await this.policyService.getMasterPasswordPolicyOptions();
     }
 
@@ -48,12 +48,12 @@ export class ChangePasswordComponent implements OnInit {
             return;
         }
 
-        const email = this.accountService.activeAccount.email;
+        const email = this.activeAccountService.activeAccount.email;
         if (this.kdf == null) {
-            this.kdf = await this.accountService.getSetting<KdfType>(StorageKey.KdfType);
+            this.kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
         }
         if (this.kdfIterations == null) {
-            this.kdfIterations = await this.accountService.getSetting<number>(StorageKey.KdfIterations);
+            this.kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
         }
         const key = await this.cryptoService.makeKey(this.masterPassword, email.trim().toLowerCase(),
             this.kdf, this.kdfIterations);

@@ -4,7 +4,7 @@ import { StorageKey } from '../enums/storageKey';
 
 import { EnvironmentUrls } from '../models/domain/environmentUrls';
 
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { EnvironmentService as EnvironmentServiceAbstraction, Urls } from '../abstractions/environment.service';
 
 export class EnvironmentService implements EnvironmentServiceAbstraction {
@@ -20,7 +20,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     private notificationsUrl: string;
     private eventsUrl: string;
 
-    constructor(private accountService: AccountService) {}
+    constructor(private activeAccountService: ActiveAccountService) {}
 
     hasBaseUrl() {
         return this.baseUrl != null;
@@ -104,7 +104,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     }
 
     async setUrlsFromStorage(): Promise<void> {
-        const urlsObj: any = await this.accountService.getSetting<any>(StorageKey.EnvironmentUrls);
+        const urlsObj: any = await this.activeAccountService.get<any>(StorageKey.EnvironmentUrls);
         const urls = urlsObj || {
             base: null,
             api: null,
@@ -140,7 +140,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
         urls.events = this.formatUrl(urls.events);
 
         if (saveSettings) {
-            await this.accountService.saveSetting(StorageKey.EnvironmentUrls, {
+            await this.activeAccountService.save(StorageKey.EnvironmentUrls, {
                 base: urls.base,
                 api: urls.api,
                 identity: urls.identity,

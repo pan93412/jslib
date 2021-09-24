@@ -4,7 +4,7 @@ import {
     Router,
 } from '@angular/router';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { VaultTimeoutService } from 'jslib-common/abstractions/vaultTimeout.service';
 
 @Injectable()
@@ -12,10 +12,10 @@ export class UnauthGuardService implements CanActivate {
 
     protected homepage = 'vault';
     constructor(private vaultTimeoutService: VaultTimeoutService, private router: Router,
-        private accountService: AccountService) { }
+        private activeAccountService: ActiveAccountService) { }
 
     async canActivate() {
-        const isAuthed = this.accountService.activeAccount?.isAuthenticated;
+        const isAuthed = this.activeAccountService.activeAccount?.isAuthenticated;
         if (isAuthed) {
             const locked = await this.vaultTimeoutService.isLocked();
             if (locked) {

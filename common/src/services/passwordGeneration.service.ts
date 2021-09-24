@@ -6,7 +6,7 @@ import { PasswordGeneratorPolicyOptions } from '../models/domain/passwordGenerat
 import { Policy } from '../models/domain/policy';
 import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { CryptoService } from '../abstractions/crypto.service';
 import {
     PasswordGenerationService as PasswordGenerationServiceAbstraction,
@@ -43,7 +43,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     private history: GeneratedPasswordHistory[];
 
     constructor(private cryptoService: CryptoService, private policyService: PolicyService,
-        private accountService: AccountService) { }
+        private activeAccountService: ActiveAccountService) { }
 
     async generatePassword(options: any): Promise<string> {
         // overload defaults with given options
@@ -185,7 +185,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     }
 
     async getOptions(): Promise<[any, PasswordGeneratorPolicyOptions]> {
-        const options = await this.accountService.getSetting<any>(StorageKey.PasswordGenerationOptions);
+        const options = await this.activeAccountService.get<any>(StorageKey.PasswordGenerationOptions);
         if (options == null) {
             this.optionsCache = DefaultOptions;
         } else {
@@ -327,7 +327,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     }
 
     async saveOptions(options: any) {
-        await this.accountService.saveSetting(StorageKey.PasswordGenerationOptions, options);
+        await this.activeAccountService.save(StorageKey.PasswordGenerationOptions, options);
     }
 
     async getHistory(): Promise<GeneratedPasswordHistory[]> {
@@ -337,13 +337,13 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         if (!this.history) {
-            const encrypted = await this.accountService.getSetting<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { skipMemory: true } as SettingStorageOptions);
+            const encrypted = await this.activeAccountService.get<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { skipMemory: true } as SettingStorageOptions);
             const decrypted = await this.decryptHistory(encrypted);
-            await this.accountService.saveSetting(StorageKey.PasswordGenerationHistory, decrypted, { skipDisk: true } as SettingStorageOptions);
+            await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, decrypted, { skipDisk: true } as SettingStorageOptions);
         }
 
-        return await this.accountService.hasSetting(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) ?
-            await this.accountService.getSetting(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) :
+        return await this.activeAccountService.has(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) ?
+            await this.activeAccountService.get(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) :
             new Array<GeneratedPasswordHistory>();
     }
 
@@ -369,11 +369,11 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         const newHistory = await this.encryptHistory(currentHistory);
-        return await this.accountService.saveSetting(StorageKey.PasswordGenerationHistory, newHistory, { skipMemory: true } as SettingStorageOptions);
+        return await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, newHistory, { skipMemory: true } as SettingStorageOptions);
     }
 
     async clear(): Promise<any> {
-        await this.accountService.removeSetting(StorageKey.PasswordGenerationHistory);
+        await this.activeAccountService.remove(StorageKey.PasswordGenerationHistory);
     }
 
     passwordStrength(password: string, userInputs: string[] = null): zxcvbn.ZXCVBNResult {

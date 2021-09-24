@@ -14,7 +14,7 @@ import { CipherType } from 'jslib-common/enums/cipherType';
 import { EventType } from 'jslib-common/enums/eventType';
 import { FieldType } from 'jslib-common/enums/fieldType';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { AuditService } from 'jslib-common/abstractions/audit.service';
 import { BroadcasterService } from 'jslib-common/abstractions/broadcaster.service';
@@ -69,7 +69,7 @@ export class ViewComponent implements OnDestroy, OnInit {
         protected broadcasterService: BroadcasterService, protected ngZone: NgZone,
         protected changeDetectorRef: ChangeDetectorRef, protected eventService: EventService,
         protected apiService: ApiService, protected passwordRepromptService: PasswordRepromptService,
-        protected accountService: AccountService) { }
+        protected activeAccountService: ActiveAccountService) { }
 
     ngOnInit() {
         this.broadcasterService.subscribe(BroadcasterSubscriptionId, (message: any) => {
@@ -96,7 +96,7 @@ export class ViewComponent implements OnDestroy, OnInit {
 
         const cipher = await this.cipherService.get(this.cipherId);
         this.cipher = await cipher.decrypt();
-        this.canAccessPremium = this.accountService.activeAccount.canAccessPremium;
+        this.canAccessPremium = this.activeAccountService.activeAccount.canAccessPremium;
 
         if (this.cipher.type === CipherType.Login && this.cipher.login.totp &&
             (cipher.organizationUseTotp || this.canAccessPremium)) {

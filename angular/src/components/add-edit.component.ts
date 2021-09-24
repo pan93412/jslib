@@ -14,7 +14,7 @@ import { PolicyType } from 'jslib-common/enums/policyType';
 import { SecureNoteType } from 'jslib-common/enums/secureNoteType';
 import { UriMatchType } from 'jslib-common/enums/uriMatchType';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { AuditService } from 'jslib-common/abstractions/audit.service';
 import { CipherService } from 'jslib-common/abstractions/cipher.service';
 import { CollectionService } from 'jslib-common/abstractions/collection.service';
@@ -89,7 +89,7 @@ export class AddEditComponent implements OnInit {
         protected auditService: AuditService, protected stateService: StateService,
         protected collectionService: CollectionService, protected messagingService: MessagingService,
         protected eventService: EventService, protected policyService: PolicyService,
-        protected accountService: AccountService, private organizationService: OrganizationService) {
+        protected activeAccountService: ActiveAccountService, private organizationService: OrganizationService) {
         this.typeOptions = [
             { name: i18nService.t('typeLogin'), value: CipherType.Login },
             { name: i18nService.t('typeCard'), value: CipherType.Card },
@@ -151,7 +151,7 @@ export class AddEditComponent implements OnInit {
     }
 
     async init() {
-        const myEmail = this.accountService.activeAccount?.email;
+        const myEmail = this.activeAccountService.activeAccount?.email;
         this.ownershipOptions.push({ name: myEmail, value: null });
         const orgs = await this.organizationService.getAll();
         orgs.sort(Utils.getSortFunction(this.i18nService, 'name')).forEach(o => {

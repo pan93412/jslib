@@ -6,7 +6,7 @@ import { StorageKey } from '../../enums/storageKey';
 export class Account {
     userId: string;
     email: string;
-    settings: Map<string, any> = new Map<string, any>();
+    information: Map<string, any> = new Map<string, any>();
 
     constructor(userId: string, userEmail: string,
         kdfType: KdfType, kdfIterations: number,
@@ -14,20 +14,20 @@ export class Account {
         accessToken: string, refreshToken: string) {
         this.userId = userId;
         this.email = userEmail;
-        this.settings.set(StorageKey.KdfType, kdfType);
-        this.settings.set(StorageKey.KdfIterations, kdfIterations);
-        this.settings.set(StorageKey.ClientId, clientId);
-        this.settings.set(StorageKey.ClientSecret, clientSecret);
-        this.settings.set(StorageKey.AccessToken, accessToken);
-        this.settings.set(StorageKey.RefreshToken, refreshToken);
+        this.information.set(StorageKey.KdfType, kdfType);
+        this.information.set(StorageKey.KdfIterations, kdfIterations);
+        this.information.set(StorageKey.ClientId, clientId);
+        this.information.set(StorageKey.ClientSecret, clientSecret);
+        this.information.set(StorageKey.AccessToken, accessToken);
+        this.information.set(StorageKey.RefreshToken, refreshToken);
     }
 
     get isAuthenticated(): boolean {
-        if (!this.settings.has(StorageKey.AccessToken)) {
+        if (!this.information.has(StorageKey.AccessToken)) {
             return false;
         }
 
-        return this.userId != null || this.settings.has(StorageKey.EntityId);
+        return this.userId != null || this.information.has(StorageKey.EntityId);
     }
 
     get canAccessPremium(): boolean {
@@ -39,14 +39,14 @@ export class Account {
     }
 
     private get hasPremiumPersonally(): boolean {
-        const token = this.settings.get(StorageKey.AccessToken);
+        const token = this.information.get(StorageKey.AccessToken);
         if (token.premium) {
            return true;
         }
     }
 
     private get hasPremiumThroughOrganization(): boolean {
-        const organizations = this.settings.get(StorageKey.Organizations) as {
+        const organizations = this.information.get(StorageKey.Organizations) as {
             [id: string]: OrganizationData;
         };
 

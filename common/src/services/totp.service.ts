@@ -1,4 +1,4 @@
-import { AccountService } from '../abstractions/account.service';
+import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { CryptoFunctionService } from '../abstractions/cryptoFunction.service';
 import { TotpService as TotpServiceAbstraction } from '../abstractions/totp.service';
 
@@ -10,7 +10,7 @@ const B32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const SteamChars = '23456789BCDFGHJKMNPQRTVWXY';
 
 export class TotpService implements TotpServiceAbstraction {
-    constructor(private cryptoFunctionService: CryptoFunctionService, private accountService: AccountService) { }
+    constructor(private cryptoFunctionService: CryptoFunctionService, private activeAccountService: ActiveAccountService) { }
 
     async getCode(key: string): Promise<string> {
         if (key == null) {
@@ -106,7 +106,7 @@ export class TotpService implements TotpServiceAbstraction {
     }
 
     async isAutoCopyEnabled(): Promise<boolean> {
-        return !(await this.accountService.getSetting<boolean>(StorageKey.DisableAutoTotpCopy));
+        return !(await this.activeAccountService.get<boolean>(StorageKey.DisableAutoTotpCopy));
     }
 
     // Helpers
