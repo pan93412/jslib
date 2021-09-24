@@ -280,7 +280,7 @@ export class CipherService implements CipherServiceAbstraction {
 
     @sequentialize(() => 'getAllDecrypted')
     async getAllDecrypted(): Promise<CipherView[]> {
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         if (await this.getDecryptedCipherCache() != null) {
             if (this.searchService != null && (this.searchService().indexedEntityId ?? userId) !== userId)
             {
@@ -547,7 +547,7 @@ export class CipherService implements CipherServiceAbstraction {
             response = await this.apiService.putCipher(cipher.id, request);
         }
 
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         const data = new CipherData(response, userId, cipher.collectionIds);
         await this.upsert(data);
     }
@@ -568,7 +568,7 @@ export class CipherService implements CipherServiceAbstraction {
         const encCipher = await this.encrypt(cipher);
         const request = new CipherShareRequest(encCipher);
         const response = await this.apiService.putShareCipher(cipher.id, request);
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         const data = new CipherData(response, userId, collectionIds);
         await this.upsert(data);
     }
@@ -586,7 +586,7 @@ export class CipherService implements CipherServiceAbstraction {
         await Promise.all(promises);
         const request = new CipherBulkShareRequest(encCiphers, collectionIds);
         await this.apiService.putShareCiphers(request);
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         await this.upsert(encCiphers.map(c => c.toCipherData(userId)));
     }
 
@@ -639,7 +639,7 @@ export class CipherService implements CipherServiceAbstraction {
             }
         }
 
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         const cData = new CipherData(response, userId, cipher.collectionIds);
         if (!admin) {
             await this.upsert(cData);
@@ -687,7 +687,7 @@ export class CipherService implements CipherServiceAbstraction {
     async saveCollectionsWithServer(cipher: Cipher): Promise<any> {
         const request = new CipherCollectionsRequest(cipher.collectionIds);
         await this.apiService.putCipherCollections(cipher.id, request);
-        const userId = this.activeAccountService.activeAccount.userId;
+        const userId = this.activeAccountService.userId;
         const data = cipher.toCipherData(userId);
         await this.upsert(data);
     }

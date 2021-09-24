@@ -63,7 +63,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
         }
 
         // "is logged out check" - similar to isLocked, below
-        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.isAuthenticated;
         if (!authed) {
             return;
         }
@@ -92,7 +92,7 @@ export class VaultTimeoutService implements VaultTimeoutServiceAbstraction {
     }
 
     async lock(allowSoftLock = false): Promise<void> {
-        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.isAuthenticated;
         if (!authed) {
             return;
         }

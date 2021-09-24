@@ -30,7 +30,7 @@ export class EventService implements EventServiceAbstraction {
     }
 
     async collect(eventType: EventType, cipherId: string = null, uploadImmediately = false): Promise<any> {
-        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.isAuthenticated;
         if (!authed) {
             return;
         }
@@ -64,7 +64,7 @@ export class EventService implements EventServiceAbstraction {
     }
 
     async uploadEvents(): Promise<any> {
-        const authed = this.activeAccountService.activeAccount?.isAuthenticated;
+        const authed = this.activeAccountService.isAuthenticated;
         if (!authed) {
             return;
         }

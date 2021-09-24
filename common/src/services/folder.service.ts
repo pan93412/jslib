@@ -121,7 +121,7 @@ export class FolderService implements FolderServiceAbstraction {
             response = await this.apiService.putFolder(folder.id, request);
         }
 
-        const userId = this.activeAccountService.activeAccount?.userId;
+        const userId = this.activeAccountService.userId;
         const data = new FolderData(response, userId);
         await this.upsert(data);
     }

@@ -117,9 +117,9 @@ export class NotificationsService implements NotificationsServiceAbstraction {
             return;
         }
 
-        const isAuthenticated = this.activeAccountService.activeAccount?.isAuthenticated;
+        const isAuthenticated = this.activeAccountService.isAuthenticated;
         const payloadUserId = notification.payload.userId || notification.payload.UserId;
-        const myUserId = this.activeAccountService.activeAccount?.userId;
+        const myUserId = this.activeAccountService.userId;
         if (isAuthenticated && payloadUserId != null && payloadUserId !== myUserId) {
             return;
         }
@@ -200,7 +200,7 @@ export class NotificationsService implements NotificationsServiceAbstraction {
     }
 
     private async isAuthedAndUnlocked() {
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             const locked = await this.vaultTimeoutService.isLocked();
             return !locked;
         }

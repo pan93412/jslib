@@ -45,7 +45,7 @@ export class SyncService implements SyncServiceAbstraction {
     }
 
     async getLastSync(): Promise<Date> {
-        if (this.activeAccountService.activeAccount?.userId == null) {
+        if (this.activeAccountService.userId == null) {
             return null;
         }
 
@@ -58,7 +58,7 @@ export class SyncService implements SyncServiceAbstraction {
     }
 
     async setLastSync(date: Date): Promise<any> {
-        if (this.activeAccountService.activeAccount?.userId) {
+        if (this.activeAccountService.userId) {
             return;
         }
 
@@ -67,7 +67,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async fullSync(forceSync: boolean, allowThrowOnError = false): Promise<boolean> {
         this.syncStarted();
-        const isAuthenticated = this.activeAccountService.activeAccount?.isAuthenticated;
+        const isAuthenticated = this.activeAccountService.isAuthenticated;
         if (!isAuthenticated) {
             return this.syncCompleted(false);
         }
@@ -87,7 +87,7 @@ export class SyncService implements SyncServiceAbstraction {
             return this.syncCompleted(false);
         }
 
-        const userId = this.activeAccountService.activeAccount?.userId;
+        const userId = this.activeAccountService.userId;
         try {
             await this.apiService.refreshIdentityToken();
             const response = await this.apiService.getSync();
@@ -113,14 +113,14 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertFolder(notification: SyncFolderNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             try {
                 const localFolder = await this.folderService.get(notification.id);
                 if ((!isEdit && localFolder == null) ||
                     (isEdit && localFolder != null && localFolder.revisionDate < notification.revisionDate)) {
                     const remoteFolder = await this.apiService.getFolder(notification.id);
                     if (remoteFolder != null) {
-                        const userId = this.activeAccountService.activeAccount?.userId;
+                        const userId = this.activeAccountService.userId;
                         await this.folderService.upsert(new FolderData(remoteFolder, userId));
                         this.messagingService.send('syncedUpsertedFolder', { folderId: notification.id });
                         return this.syncCompleted(true);
@@ -133,7 +133,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteFolder(notification: SyncFolderNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             await this.folderService.delete(notification.id);
             this.messagingService.send('syncedDeletedFolder', { folderId: notification.id });
             this.syncCompleted(true);
@@ -144,7 +144,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertCipher(notification: SyncCipherNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             try {
                 let shouldUpdate = true;
                 const localCipher = await this.cipherService.get(notification.id);
@@ -183,7 +183,7 @@ export class SyncService implements SyncServiceAbstraction {
                 if (shouldUpdate) {
                     const remoteCipher = await this.apiService.getCipher(notification.id);
                     if (remoteCipher != null) {
-                        const userId = this.activeAccountService.activeAccount?.userId;
+                        const userId = this.activeAccountService.userId;
                         await this.cipherService.upsert(new CipherData(remoteCipher, userId));
                         this.messagingService.send('syncedUpsertedCipher', { cipherId: notification.id });
                         return this.syncCompleted(true);
@@ -202,7 +202,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteCipher(notification: SyncCipherNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             await this.cipherService.delete(notification.id);
             this.messagingService.send('syncedDeletedCipher', { cipherId: notification.id });
             return this.syncCompleted(true);
@@ -212,14 +212,14 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertSend(notification: SyncSendNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             try {
                 const localSend = await this.sendService.get(notification.id);
                 if ((!isEdit && localSend == null) ||
                     (isEdit && localSend != null && localSend.revisionDate < notification.revisionDate)) {
                     const remoteSend = await this.apiService.getSend(notification.id);
                     if (remoteSend != null) {
-                        const userId = this.activeAccountService.activeAccount?.userId;
+                        const userId = this.activeAccountService.userId;
                         await this.sendService.upsert(new SendData(remoteSend, userId));
                         this.messagingService.send('syncedUpsertedSend', { sendId: notification.id });
                         return this.syncCompleted(true);
@@ -232,7 +232,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteSend(notification: SyncSendNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.activeAccount?.isAuthenticated) {
+        if (this.activeAccountService.isAuthenticated) {
             await this.sendService.delete(notification.id);
             this.messagingService.send('syncedDeletedSend', { sendId: notification.id });
             this.syncCompleted(true);

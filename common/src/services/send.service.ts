@@ -152,7 +152,7 @@ export class SendService implements SendServiceAbstraction {
             response = await this.apiService.putSend(sendData[0].id, request);
         }
 
-        const userId = this.activeAccountService.activeAccount?.userId;
+        const userId = this.activeAccountService.userId;
         const data = new SendData(response, userId);
         await this.upsert(data);
     }
@@ -240,7 +240,7 @@ export class SendService implements SendServiceAbstraction {
 
     async removePasswordWithServer(id: string): Promise<any> {
         const response = await this.apiService.putSendRemovePassword(id);
-        const userId = this.activeAccountService.activeAccount?.userId;
+        const userId = this.activeAccountService.userId;
         const data = new SendData(response, userId);
         await this.upsert(data);
     }

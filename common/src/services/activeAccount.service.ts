@@ -9,7 +9,15 @@ import { StorageKey } from '../enums/storageKey';
 import { StoreService } from './store.service';
 
 export class ActiveAccountService implements ActiveAccountServiceAbstraction {
-    activeAccount: Account;
+    private activeAccount: Account;
+
+    get userId(): string {
+        return this.activeAccount?.userId;
+    }
+
+    get isAuthenticated(): boolean {
+        return this.activeAccount?.isAuthenticated ?? false;
+    }
 
     constructor(private accountsManagementService: AccountsManagementService, private storeService: StoreService) { 
         this.accountsManagementService.activeAccount.subscribe(data => this.activeAccount = data);
@@ -58,7 +66,7 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
     }
 
     private async prefixKey(key: StorageKey | string): Promise<string> {
-        let prefix = this.activeAccount?.userId;
+        let prefix = this.userId;
         if (prefix == null) {
             prefix = 'global';
         }
