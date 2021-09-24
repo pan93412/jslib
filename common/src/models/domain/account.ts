@@ -38,6 +38,15 @@ export class Account {
         return this.hasPremiumPersonally || this.hasPremiumThroughOrganization;
     }
 
+    get serverUrl(): string {
+        if (!this.information.has(StorageKey.EnvironmentUrls)) {
+            return null;
+        }
+
+        const enviromentUrls = this.information.get(StorageKey.EnvironmentUrls);
+        return enviromentUrls.base;
+    }
+
     private get hasPremiumPersonally(): boolean {
         const token = this.information.get(StorageKey.AccessToken);
         if (token.premium) {
