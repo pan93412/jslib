@@ -43,7 +43,7 @@ export class TokenService implements TokenServiceAbstraction {
     }
 
     async setToken(token: string): Promise<any> {
-        return this.activeAccountService.save(StorageKey.AccessToken, token, { skipDisk: await this.skipTokenStorage() } as SettingStorageOptions);
+        return this.activeAccountService.save(StorageKey.AccessToken, token, { skipDisk: await this.skipTokenStorage() });
     }
 
     async getToken(): Promise<string> {
@@ -105,7 +105,7 @@ export class TokenService implements TokenServiceAbstraction {
 
     async decodeToken(token?: string): Promise<any> {
         if (token === null) {
-            if (await this.activeAccountService.get(StorageKey.AccessToken, { skipDisk: true } as SettingStorageOptions)) {
+            if (await this.activeAccountService.get(StorageKey.AccessToken, { skipDisk: true })) {
                 return await this.activeAccountService.get(StorageKey.AccessToken);
             }
 

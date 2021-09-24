@@ -353,7 +353,7 @@ export class AuthService implements AuthServiceAbstraction {
             clientId, clientSecret, tokenResponse.accessToken, tokenResponse.refreshToken));
 
         await this.activeAccountService.save(StorageKey.AccessToken,
-            tokenResponse.accessToken, { skipMemory: true } as SettingStorageOptions);
+            tokenResponse.accessToken, { skipMemory: true } );
 
         if (tokenResponse.twoFactorToken != null) {
             await this.tokenService.setTwoFactorToken(tokenResponse.twoFactorToken, email);

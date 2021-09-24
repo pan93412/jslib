@@ -67,12 +67,12 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async getDecryptedCipherCache(): Promise<CipherView[]> {
-        const decryptedCiphers = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers, { skipDisk: true } as SettingStorageOptions);
+        const decryptedCiphers = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers, { skipDisk: true });
         return decryptedCiphers;
     }
 
     async setDecryptedCipherCache(value: CipherView[]) {
-        await this.activeAccountService.save(StorageKey.Ciphers, value, { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, value, { skipDisk: true });
         if (this.searchService != null) {
             if (value == null) {
                 this.searchService().clearIndex();
@@ -83,7 +83,7 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Ciphers,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.remove(StorageKey.Ciphers,  { skipDisk: true });
         this.sortedCiphersCache.clear();
     }
 
@@ -257,7 +257,7 @@ export class CipherService implements CipherServiceAbstraction {
     async get(id: string): Promise<Cipher> {
         const localData = await this.activeAccountService.get<any>(StorageKey.LocalData);
         const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Ciphers,  { skipMemory: true });
         if (ciphers == null || !ciphers.hasOwnProperty(id)) {
             return null;
         }
@@ -268,7 +268,7 @@ export class CipherService implements CipherServiceAbstraction {
     async getAll(): Promise<Cipher[]> {
         const localData = await this.activeAccountService.get<any>(StorageKey.LocalData);
         const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers, { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Ciphers, { skipMemory: true });
         const response: Cipher[] = [];
         for (const id in ciphers) {
             if (ciphers.hasOwnProperty(id)) {
@@ -303,7 +303,7 @@ export class CipherService implements CipherServiceAbstraction {
 
         await Promise.all(promises);
         decCiphers.sort(this.getLocaleSortingFunction());
-        await this.activeAccountService.save(StorageKey.Ciphers, decCiphers,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, decCiphers,  { skipDisk: true });
         return decCiphers;
     }
 
@@ -472,11 +472,11 @@ export class CipherService implements CipherServiceAbstraction {
 
         await this.activeAccountService.save(StorageKey.LocalData, ciphersLocalData);
 
-        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true } as SettingStorageOptions)) {
+        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true })) {
             return;
         }
 
-        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true } as SettingStorageOptions);
+        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true });
         for (let i = 0; i < decryptedCipherCache.length; i++) {
             const cached = decryptedCipherCache[i];
             if (cached.id === id) {
@@ -484,7 +484,7 @@ export class CipherService implements CipherServiceAbstraction {
                 break;
             }
         }
-        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true });
     }
 
     async updateLastLaunchedDate(id: string): Promise<void> {
@@ -503,11 +503,11 @@ export class CipherService implements CipherServiceAbstraction {
 
         await this.activeAccountService.save(StorageKey.LocalData, ciphersLocalData);
 
-        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true } as SettingStorageOptions)) {
+        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true })) {
             return;
         }
 
-        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true } as SettingStorageOptions);
+        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true });
         for (let i = 0; i < decryptedCipherCache.length; i++) {
             const cached = decryptedCipherCache[i];
             if (cached.id === id) {
@@ -515,7 +515,7 @@ export class CipherService implements CipherServiceAbstraction {
                 break;
             }
         }
-        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true });
     }
 
     async saveNeverDomain(domain: string): Promise<void> {
@@ -694,7 +694,7 @@ export class CipherService implements CipherServiceAbstraction {
 
     async upsert(cipher: CipherData | CipherData[]): Promise<any> {
         let ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Ciphers,  { skipMemory: true });
         if (ciphers == null) {
             ciphers = {};
         }
@@ -709,12 +709,12 @@ export class CipherService implements CipherServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
     }
 
     async replace(ciphers: { [id: string]: CipherData; }): Promise<any> {
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
     }
 
     async clear(): Promise<any> {
@@ -726,7 +726,7 @@ export class CipherService implements CipherServiceAbstraction {
         await this.apiService.putMoveCiphers(new CipherBulkMoveRequest(ids, folderId));
 
         let ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Ciphers,  { skipMemory: true });
         if (ciphers == null) {
             ciphers = {};
         }
@@ -738,7 +738,7 @@ export class CipherService implements CipherServiceAbstraction {
         });
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
     }
 
     async delete(id: string | string[]): Promise<any> {
@@ -760,7 +760,7 @@ export class CipherService implements CipherServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
     }
 
     async deleteWithServer(id: string): Promise<any> {
@@ -788,7 +788,7 @@ export class CipherService implements CipherServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
     }
 
     async deleteAttachmentWithServer(id: string, attachmentId: string): Promise<void> {
@@ -887,7 +887,7 @@ export class CipherService implements CipherServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
     }
 
     async softDeleteWithServer(id: string): Promise<any> {
@@ -902,7 +902,7 @@ export class CipherService implements CipherServiceAbstraction {
 
     async restore(cipher: { id: string, revisionDate: string; } | { id: string, revisionDate: string; }[]) {
         const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Ciphers,  { skipMemory: true });
         if (ciphers == null) {
             return;
         }
@@ -923,7 +923,7 @@ export class CipherService implements CipherServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
     }
 
     async restoreWithServer(id: string): Promise<any> {

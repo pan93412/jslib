@@ -32,7 +32,7 @@ export class FolderService implements FolderServiceAbstraction {
         private activeAccountService: ActiveAccountService) { }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Folders, { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.remove(StorageKey.Folders, { skipDisk: true });
     }
 
     async encrypt(model: FolderView, key?: SymmetricCryptoKey): Promise<Folder> {
@@ -65,8 +65,8 @@ export class FolderService implements FolderServiceAbstraction {
     }
 
     async getAllDecrypted(): Promise<FolderView[]> {
-        if (await this.activeAccountService.has(StorageKey.Folders, { skipDisk: true } as SettingStorageOptions)) {
-            return this.activeAccountService.get(StorageKey.Folders, { skipDisk: true } as SettingStorageOptions);
+        if (await this.activeAccountService.has(StorageKey.Folders, { skipDisk: true })) {
+            return this.activeAccountService.get(StorageKey.Folders, { skipDisk: true });
         }
 
         const hasKey = await this.cryptoService.hasKey();
@@ -88,7 +88,7 @@ export class FolderService implements FolderServiceAbstraction {
         noneFolder.name = this.i18nService.t('noneFolder');
         decFolders.push(noneFolder);
 
-        await this.activeAccountService.save(StorageKey.Folders, decFolders, { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Folders, decFolders, { skipDisk: true });
         return decFolders;
     }
 
@@ -128,7 +128,7 @@ export class FolderService implements FolderServiceAbstraction {
 
     async upsert(folder: FolderData | FolderData[]): Promise<any> {
         let folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
-            StorageKey.Folders, { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Folders, { skipMemory: true });
         if (folders == null) {
             folders = {};
         }
@@ -143,12 +143,12 @@ export class FolderService implements FolderServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
     }
 
     async replace(folders: { [id: string]: FolderData; }): Promise<any> {
         await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
     }
 
     async clear(): Promise<any> {
@@ -157,7 +157,7 @@ export class FolderService implements FolderServiceAbstraction {
 
     async delete(id: string | string[]): Promise<any> {
         const folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
-            StorageKey.Folders, { skipMemory: true } as SettingStorageOptions);
+            StorageKey.Folders, { skipMemory: true });
         if (folders == null) {
             return;
         }
@@ -174,10 +174,10 @@ export class FolderService implements FolderServiceAbstraction {
         }
 
         await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true } as SettingStorageOptions);
+        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
 
         // Items in a deleted folder are re-assigned to "No Folder"
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(StorageKey.Ciphers, { skipMemory: true } as SettingStorageOptions);
+        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(StorageKey.Ciphers, { skipMemory: true });
         if (ciphers != null) {
             const updates: CipherData[] = [];
             for (const cId in ciphers) {

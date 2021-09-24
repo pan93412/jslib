@@ -10,7 +10,7 @@ export class SettingsService implements SettingsServiceAbstraction {
     }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Settings, { skipDisk: true } as SettingStorageOptions);
+        await this.activeAccountService.remove(StorageKey.Settings, { skipDisk: true });
     }
 
     getEquivalentDomains(): Promise<any> {

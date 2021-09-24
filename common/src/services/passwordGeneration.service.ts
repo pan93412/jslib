@@ -337,13 +337,13 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         if (!this.history) {
-            const encrypted = await this.activeAccountService.get<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { skipMemory: true } as SettingStorageOptions);
+            const encrypted = await this.activeAccountService.get<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { skipMemory: true });
             const decrypted = await this.decryptHistory(encrypted);
-            await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, decrypted, { skipDisk: true } as SettingStorageOptions);
+            await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, decrypted, { skipDisk: true });
         }
 
-        return await this.activeAccountService.has(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) ?
-            await this.activeAccountService.get(StorageKey.PasswordGenerationHistory, { skipDisk: true } as SettingStorageOptions) :
+        return await this.activeAccountService.has(StorageKey.PasswordGenerationHistory, { skipDisk: true }) ?
+            await this.activeAccountService.get(StorageKey.PasswordGenerationHistory, { skipDisk: true }) :
             new Array<GeneratedPasswordHistory>();
     }
 
@@ -369,7 +369,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         const newHistory = await this.encryptHistory(currentHistory);
-        return await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, newHistory, { skipMemory: true } as SettingStorageOptions);
+        return await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, newHistory, { skipMemory: true });
     }
 
     async clear(): Promise<any> {
