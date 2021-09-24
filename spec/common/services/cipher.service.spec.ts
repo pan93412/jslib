@@ -1,6 +1,6 @@
 import { Arg, Substitute, SubstituteOf } from '@fluffy-spoon/substitute';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { ApiService } from 'jslib-common/abstractions/api.service';
 import { CryptoService } from 'jslib-common/abstractions/crypto.service';
 import { FileUploadService } from 'jslib-common/abstractions/fileUpload.service';
@@ -20,7 +20,7 @@ const ENCRYPTED_BYTES = new EncArrayBuffer(Utils.fromUtf8ToArray(ENCRYPTED_TEXT)
 
 describe('Cipher Service', () => {
     let cryptoService: SubstituteOf<CryptoService>;
-    let accountService: SubstituteOf<AccountService>;
+    let activeAccount: SubstituteOf<ActiveAccountService>;
     let settingsService: SubstituteOf<SettingsService>;
     let apiService: SubstituteOf<ApiService>;
     let fileUploadService: SubstituteOf<FileUploadService>;
@@ -31,7 +31,7 @@ describe('Cipher Service', () => {
 
     beforeEach(() => {
         cryptoService = Substitute.for<CryptoService>();
-        accountService = Substitute.for<AccountService>();
+        activeAccount = Substitute.for<ActiveAccountService>();
         settingsService = Substitute.for<SettingsService>();
         apiService = Substitute.for<ApiService>();
         fileUploadService = Substitute.for<FileUploadService>();
@@ -42,7 +42,7 @@ describe('Cipher Service', () => {
         cryptoService.encrypt(Arg.any(), Arg.any()).resolves(new EncString(ENCRYPTED_TEXT));
 
         cipherService = new CipherService(cryptoService, settingsService, apiService, fileUploadService,
-            i18nService, () => searchService, accountService);
+            i18nService, () => searchService, activeAccount);
     });
 
     it('attachments upload encrypted file contents', async () => {
