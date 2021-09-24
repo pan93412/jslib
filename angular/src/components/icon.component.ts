@@ -9,8 +9,8 @@ import { StorageKey } from 'jslib-common/enums/storageKey';
 
 import { CipherView } from 'jslib-common/models/view/cipherView';
 
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { EnvironmentService } from 'jslib-common/abstractions/environment.service';
-import { StateService } from 'jslib-common/abstractions/state.service';
 
 import { Utils } from 'jslib-common/misc/utils';
 
@@ -36,7 +36,7 @@ export class IconComponent implements OnChanges {
 
     private iconsUrl: string;
 
-    constructor(environmentService: EnvironmentService, protected stateService: StateService) {
+    constructor(environmentService: EnvironmentService, private activeAccountService: ActiveAccountService) {
         this.iconsUrl = environmentService.getIconsUrl();
     }
 
@@ -45,7 +45,7 @@ export class IconComponent implements OnChanges {
         // to avoid this we reset all state variables.
         this.image = null;
         this.fallbackImage = null;
-        this.imageEnabled = !(await this.stateService.get<boolean>(StorageKey.DisableFavicon));
+        this.imageEnabled = !(await this.activeAccountService.get<boolean>(StorageKey.DisableFavicon));
         this.load();
     }
 

@@ -5,7 +5,7 @@ import * as url from 'url';
 
 import { isDev, isMacAppStore, isSnapStore } from './utils';
 
-import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
+import { StorageService } from 'jslib-common/abstractions/storage.service';
 import { StorageKey } from 'jslib-common/enums/storageKey';
 
 const WindowEventHandlingDelay = 100;
@@ -19,7 +19,7 @@ export class WindowMain {
 
     constructor(private hideTitleBar = false, private defaultWidth = 950,
         private defaultHeight = 600, private argvCallback: (argv: string[]) => void = null,
-        private createWindowCallback: (win: BrowserWindow) => void, private activeAccountService: ActiveAccountService) { }
+        private createWindowCallback: (win: BrowserWindow) => void, private storageService: StorageService) { }
 
     init(): Promise<any> {
         return new Promise<void>((resolve, reject) => {
@@ -95,7 +95,7 @@ export class WindowMain {
     async createWindow(): Promise<void> {
         this.windowStates[StorageKey.MainWindowSize] = await this.getWindowState(StorageKey.MainWindowSize, this.defaultWidth,
             this.defaultHeight);
-        this.enableAlwaysOnTop = await this.activeAccountService.get<boolean>(StorageKey.EnableAlwaysOnTopKey);
+        this.enableAlwaysOnTop = await this.storageService.get<boolean>(StorageKey.EnableAlwaysOnTopKey);
 
         // Create the browser window.
         this.win = new BrowserWindow({
@@ -183,7 +183,7 @@ export class WindowMain {
     async toggleAlwaysOnTop() {
         this.enableAlwaysOnTop = !this.win.isAlwaysOnTop();
         this.win.setAlwaysOnTop(this.enableAlwaysOnTop);
-        await this.activeAccountService.save(StorageKey.EnableAlwaysOnTopKey, this.enableAlwaysOnTop);
+        await this.storageService.save(StorageKey.EnableAlwaysOnTopKey, this.enableAlwaysOnTop);
     }
 
     private windowStateChangeHandler(configKey: string, win: BrowserWindow) {
@@ -202,7 +202,7 @@ export class WindowMain {
             const bounds = win.getBounds();
 
             if (this.windowStates[configKey] == null) {
-                this.windowStates[configKey] = await this.activeAccountService.get<any>(configKey);
+                this.windowStates[configKey] = await this.storageService.get<any>(configKey);
                 if (this.windowStates[configKey] == null) {
                     this.windowStates[configKey] = {};
                 }
@@ -218,12 +218,12 @@ export class WindowMain {
                 this.windowStates[configKey].height = bounds.height;
             }
 
-            await this.activeAccountService.save(configKey, this.windowStates[configKey]);
+            await this.storageService.save(configKey, this.windowStates[configKey]);
         } catch (e) { }
     }
 
     private async getWindowState(configKey: string, defaultWidth: number, defaultHeight: number) {
-        let state = await this.activeAccountService.get<any>(configKey);
+        let state = await this.storageService.get<any>(configKey);
 
         const isValid = state != null && (this.stateHasBounds(state) || state.isMaximized);
         let displayBounds: Electron.Rectangle = null;
