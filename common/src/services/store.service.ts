@@ -6,7 +6,7 @@ import { StorageKey } from '../enums/storageKey';
 
 export class StoreService implements StorageService {
     constructor(private storageService: StorageService,
-        private secureStorageService: StorageService) { 
+        private secureStorageService: StorageService) {
     }
 
     async save(key: StorageKey | string, obj: any, options?: SettingStorageOptions): Promise<any> {

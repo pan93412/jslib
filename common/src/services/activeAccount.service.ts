@@ -1,5 +1,5 @@
-import { ActiveAccountService as ActiveAccountServiceAbstraction } from '../abstractions/activeAccount.service';
 import { AccountsManagementService } from '../abstractions/accountsManagement.service';
+import { ActiveAccountService as ActiveAccountServiceAbstraction } from '../abstractions/activeAccount.service';
 
 import { Account } from '../models/domain/account';
 import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
@@ -19,7 +19,11 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
         return this.activeAccount?.isAuthenticated ?? false;
     }
 
-    constructor(private accountsManagementService: AccountsManagementService, private storeService: StoreService) { 
+    get serverUrl(): string {
+        return this.activeAccount?.serverUrl;
+    }
+
+    constructor(private accountsManagementService: AccountsManagementService, private storeService: StoreService) {
         this.accountsManagementService.activeAccount.subscribe(data => this.activeAccount = data);
     }
 
