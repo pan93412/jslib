@@ -38,7 +38,7 @@ export class AttachmentsComponent implements OnInit {
     constructor(protected cipherService: CipherService, protected i18nService: I18nService,
         protected cryptoService: CryptoService, protected platformUtilsService: PlatformUtilsService,
         protected apiService: ApiService, protected win: Window,
-        protected activeAccountService: ActiveAccountService) { }
+        protected activeAccount: ActiveAccountService) { }
 
     async ngOnInit() {
         await this.init();
@@ -159,7 +159,7 @@ export class AttachmentsComponent implements OnInit {
         this.cipher = await this.cipherDomain.decrypt();
 
         this.hasUpdatedKey = await this.cryptoService.hasEncKey();
-        const canAccessPremium = this.activeAccountService.activeAccount.canAccessPremium;
+        const canAccessPremium = this.activeAccount.canAccessPremium;
         this.canAccessAttachments = canAccessPremium || this.cipher.organizationId != null;
 
         if (!this.canAccessAttachments) {

@@ -9,11 +9,11 @@ import { StorageKey } from '../enums/storageKey';
 
 
 export class ProviderService implements ProviderServiceAbstraction {
-    constructor(private activeAccountService: ActiveAccountService) {
+    constructor(private activeAccount: ActiveAccountService) {
     }
 
     async get(id: string): Promise<Provider> {
-        const providers = await this.activeAccountService.get<{ [id: string]: ProviderData; }>(
+        const providers = await this.activeAccount.getInformation<{ [id: string]: ProviderData; }>(
             StorageKey.Providers);
         if (providers == null || !providers.hasOwnProperty(id)) {
             return null;
@@ -23,7 +23,7 @@ export class ProviderService implements ProviderServiceAbstraction {
     }
 
     async getAll(): Promise<Provider[]> {
-        const providers = await this.activeAccountService.get<{ [id: string]: ProviderData; }>(
+        const providers = await this.activeAccount.getInformation<{ [id: string]: ProviderData; }>(
             StorageKey.Providers);
         const response: Provider[] = [];
         for (const id in providers) {

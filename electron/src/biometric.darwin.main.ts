@@ -2,19 +2,19 @@ import { ipcMain, systemPreferences } from 'electron';
 
 import { StorageKey } from 'jslib-common/enums/storageKey';
 
-import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { BiometricMain } from 'jslib-common/abstractions/biometric.main';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
+import { StorageService } from 'jslib-common/abstractions/storage.service';
 
 export default class BiometricDarwinMain implements BiometricMain {
     isError: boolean = false;
 
-    constructor(private i18nservice: I18nService, private activeAccountService: ActiveAccountService) {}
+    constructor(private i18nservice: I18nService, private storageService: StorageService) {}
 
     async init() {
-        this.activeAccountService.save(StorageKey.EnableBiometric, await this.supportsBiometric());
-        this.activeAccountService.save(StorageKey.BiometricText, 'unlockWithTouchId');
-        this.activeAccountService.save(StorageKey.NoAutoPromptBiometricsText, 'noAutoPromptTouchId');
+        this.storageService.save(StorageKey.EnableBiometric, await this.supportsBiometric());
+        this.storageService.save(StorageKey.BiometricText, 'unlockWithTouchId');
+        this.storageService.save(StorageKey.NoAutoPromptBiometricsText, 'noAutoPromptTouchId');
 
         ipcMain.on('biometric', async (event: any, message: any) => {
             event.returnValue = await this.authenticateBiometric();

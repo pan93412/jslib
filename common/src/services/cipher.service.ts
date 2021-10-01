@@ -38,7 +38,6 @@ import { FieldView } from '../models/view/fieldView';
 import { PasswordHistoryView } from '../models/view/passwordHistoryView';
 import { View } from '../models/view/view';
 
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 import { SortedCiphersCache } from '../models/domain/sortedCiphersCache';
 
 import { ActiveAccountService } from '../abstractions/activeAccount.service';
@@ -63,16 +62,16 @@ export class CipherService implements CipherServiceAbstraction {
     constructor(private cryptoService: CryptoService, private settingsService: SettingsService,
         private apiService: ApiService, private fileUploadService: FileUploadService,
         private i18nService: I18nService, private searchService: () => SearchService,
-        private activeAccountService: ActiveAccountService) {
+        private activeAccount: ActiveAccountService) {
     }
 
     async getDecryptedCipherCache(): Promise<CipherView[]> {
-        const decryptedCiphers = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers, { skipDisk: true });
+        const decryptedCiphers = await this.activeAccount.getInformation<CipherView[]>(StorageKey.Ciphers, { storageMethod: 'memory' });
         return decryptedCiphers;
     }
 
     async setDecryptedCipherCache(value: CipherView[]) {
-        await this.activeAccountService.save(StorageKey.Ciphers, value, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, value, { storageMethod: 'memory' });
         if (this.searchService != null) {
             if (value == null) {
                 this.searchService().clearIndex();
@@ -83,7 +82,7 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Ciphers,  { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers,  { storageMethod: 'memory' });
         this.sortedCiphersCache.clear();
     }
 
@@ -255,9 +254,9 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async get(id: string): Promise<Cipher> {
-        const localData = await this.activeAccountService.get<any>(StorageKey.LocalData);
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true });
+        const localData = await this.activeAccount.getInformation<any>(StorageKey.LocalData);
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
+            StorageKey.Ciphers,  { storageMethod: 'disk' });
         if (ciphers == null || !ciphers.hasOwnProperty(id)) {
             return null;
         }
@@ -266,9 +265,9 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async getAll(): Promise<Cipher[]> {
-        const localData = await this.activeAccountService.get<any>(StorageKey.LocalData);
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers, { skipMemory: true });
+        const localData = await this.activeAccount.getInformation<any>(StorageKey.LocalData);
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
+            StorageKey.Ciphers, { storageMethod: 'disk' });
         const response: Cipher[] = [];
         for (const id in ciphers) {
             if (ciphers.hasOwnProperty(id)) {
@@ -280,7 +279,7 @@ export class CipherService implements CipherServiceAbstraction {
 
     @sequentialize(() => 'getAllDecrypted')
     async getAllDecrypted(): Promise<CipherView[]> {
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         if (await this.getDecryptedCipherCache() != null) {
             if (this.searchService != null && (this.searchService().indexedEntityId ?? userId) !== userId)
             {
@@ -303,7 +302,7 @@ export class CipherService implements CipherServiceAbstraction {
 
         await Promise.all(promises);
         decCiphers.sort(this.getLocaleSortingFunction());
-        await this.activeAccountService.save(StorageKey.Ciphers, decCiphers,  { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, decCiphers,  { storageMethod: 'memory' });
         return decCiphers;
     }
 
@@ -352,7 +351,7 @@ export class CipherService implements CipherServiceAbstraction {
         const ciphers = result[1];
 
         if (defaultMatch == null) {
-            defaultMatch = await this.activeAccountService.get<UriMatchType>(StorageKey.DefaultUriMatch);
+            defaultMatch = await this.activeAccount.getInformation<UriMatchType>(StorageKey.DefaultUriMatch);
             if (defaultMatch == null) {
                 defaultMatch = UriMatchType.Domain;
             }
@@ -457,7 +456,7 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async updateLastUsedDate(id: string): Promise<void> {
-        let ciphersLocalData = await this.activeAccountService.get<any>(StorageKey.LocalData);
+        let ciphersLocalData = await this.activeAccount.getInformation<any>(StorageKey.LocalData);
         if (!ciphersLocalData) {
             ciphersLocalData = {};
         }
@@ -470,13 +469,13 @@ export class CipherService implements CipherServiceAbstraction {
             };
         }
 
-        await this.activeAccountService.save(StorageKey.LocalData, ciphersLocalData);
+        await this.activeAccount.saveInformation(StorageKey.LocalData, ciphersLocalData);
 
-        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true })) {
+        if (!await this.activeAccount.hasInformation(StorageKey.Ciphers,  { storageMethod: 'memory' })) {
             return;
         }
 
-        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true });
+        const decryptedCipherCache = await this.activeAccount.getInformation<CipherView[]>(StorageKey.Ciphers,  { storageMethod: 'memory' });
         for (let i = 0; i < decryptedCipherCache.length; i++) {
             const cached = decryptedCipherCache[i];
             if (cached.id === id) {
@@ -484,11 +483,11 @@ export class CipherService implements CipherServiceAbstraction {
                 break;
             }
         }
-        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, decryptedCipherCache,  { storageMethod: 'memory' });
     }
 
     async updateLastLaunchedDate(id: string): Promise<void> {
-        let ciphersLocalData = await this.activeAccountService.get<any>(StorageKey.LocalData);
+        let ciphersLocalData = await this.activeAccount.getInformation<any>(StorageKey.LocalData);
         if (!ciphersLocalData) {
             ciphersLocalData = {};
         }
@@ -501,13 +500,13 @@ export class CipherService implements CipherServiceAbstraction {
             };
         }
 
-        await this.activeAccountService.save(StorageKey.LocalData, ciphersLocalData);
+        await this.activeAccount.saveInformation(StorageKey.LocalData, ciphersLocalData);
 
-        if (!await this.activeAccountService.has(StorageKey.Ciphers,  { skipDisk: true })) {
+        if (!await this.activeAccount.hasInformation(StorageKey.Ciphers,  { storageMethod: 'memory' })) {
             return;
         }
 
-        const decryptedCipherCache = await this.activeAccountService.get<CipherView[]>(StorageKey.Ciphers,  { skipDisk: true });
+        const decryptedCipherCache = await this.activeAccount.getInformation<CipherView[]>(StorageKey.Ciphers,  { storageMethod: 'memory' });
         for (let i = 0; i < decryptedCipherCache.length; i++) {
             const cached = decryptedCipherCache[i];
             if (cached.id === id) {
@@ -515,7 +514,7 @@ export class CipherService implements CipherServiceAbstraction {
                 break;
             }
         }
-        await this.activeAccountService.save(StorageKey.Ciphers, decryptedCipherCache,  { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, decryptedCipherCache,  { storageMethod: 'memory' });
     }
 
     async saveNeverDomain(domain: string): Promise<void> {
@@ -523,12 +522,12 @@ export class CipherService implements CipherServiceAbstraction {
             return;
         }
 
-        let domains = await this.activeAccountService.get<{ [id: string]: any; }>(StorageKey.NeverDomains);
+        let domains = await this.activeAccount.getInformation<{ [id: string]: any; }>(StorageKey.NeverDomains);
         if (!domains) {
             domains = {};
         }
         domains[domain] = null;
-        await this.activeAccountService.save(StorageKey.NeverDomains, domains);
+        await this.activeAccount.saveInformation(StorageKey.NeverDomains, domains);
     }
 
     async saveWithServer(cipher: Cipher): Promise<any> {
@@ -547,7 +546,7 @@ export class CipherService implements CipherServiceAbstraction {
             response = await this.apiService.putCipher(cipher.id, request);
         }
 
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = new CipherData(response, userId, cipher.collectionIds);
         await this.upsert(data);
     }
@@ -568,7 +567,7 @@ export class CipherService implements CipherServiceAbstraction {
         const encCipher = await this.encrypt(cipher);
         const request = new CipherShareRequest(encCipher);
         const response = await this.apiService.putShareCipher(cipher.id, request);
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = new CipherData(response, userId, collectionIds);
         await this.upsert(data);
     }
@@ -586,7 +585,7 @@ export class CipherService implements CipherServiceAbstraction {
         await Promise.all(promises);
         const request = new CipherBulkShareRequest(encCiphers, collectionIds);
         await this.apiService.putShareCiphers(request);
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         await this.upsert(encCiphers.map(c => c.toCipherData(userId)));
     }
 
@@ -639,7 +638,7 @@ export class CipherService implements CipherServiceAbstraction {
             }
         }
 
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const cData = new CipherData(response, userId, cipher.collectionIds);
         if (!admin) {
             await this.upsert(cData);
@@ -687,14 +686,14 @@ export class CipherService implements CipherServiceAbstraction {
     async saveCollectionsWithServer(cipher: Cipher): Promise<any> {
         const request = new CipherCollectionsRequest(cipher.collectionIds);
         await this.apiService.putCipherCollections(cipher.id, request);
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = cipher.toCipherData(userId);
         await this.upsert(data);
     }
 
     async upsert(cipher: CipherData | CipherData[]): Promise<any> {
-        let ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true });
+        let ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
+            StorageKey.Ciphers,  { storageMethod: 'disk' });
         if (ciphers == null) {
             ciphers = {};
         }
@@ -708,25 +707,25 @@ export class CipherService implements CipherServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'disk' });
     }
 
     async replace(ciphers: { [id: string]: CipherData; }): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'disk' });
     }
 
     async clear(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Ciphers);
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
         this.clearCache();
     }
 
     async moveManyWithServer(ids: string[], folderId: string): Promise<any> {
         await this.apiService.putMoveCiphers(new CipherBulkMoveRequest(ids, folderId));
 
-        let ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true });
+        let ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
+            StorageKey.Ciphers,  { storageMethod: 'disk' });
         if (ciphers == null) {
             ciphers = {};
         }
@@ -737,12 +736,12 @@ export class CipherService implements CipherServiceAbstraction {
             }
         });
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'disk' });
     }
 
     async delete(id: string | string[]): Promise<any> {
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
             StorageKey.Ciphers);
         if (ciphers == null) {
             return;
@@ -759,8 +758,8 @@ export class CipherService implements CipherServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'memory' });
     }
 
     async deleteWithServer(id: string): Promise<any> {
@@ -774,7 +773,7 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async deleteAttachment(id: string, attachmentId: string): Promise<void> {
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
             StorageKey.Ciphers);
 
         if (ciphers == null || !ciphers.hasOwnProperty(id) || ciphers[id].attachments == null) {
@@ -787,8 +786,8 @@ export class CipherService implements CipherServiceAbstraction {
             }
         }
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'memory' });
     }
 
     async deleteAttachmentWithServer(id: string, attachmentId: string): Promise<void> {
@@ -867,7 +866,7 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async softDelete(id: string | string[]): Promise<any> {
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
             StorageKey.Ciphers);
         if (ciphers == null) {
             return;
@@ -886,8 +885,8 @@ export class CipherService implements CipherServiceAbstraction {
             (id as string[]).forEach(setDeletedDate);
         }
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'memory' });
     }
 
     async softDeleteWithServer(id: string): Promise<any> {
@@ -901,8 +900,8 @@ export class CipherService implements CipherServiceAbstraction {
     }
 
     async restore(cipher: { id: string, revisionDate: string; } | { id: string, revisionDate: string; }[]) {
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(
-            StorageKey.Ciphers,  { skipMemory: true });
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(
+            StorageKey.Ciphers,  { storageMethod: 'disk' });
         if (ciphers == null) {
             return;
         }
@@ -922,8 +921,8 @@ export class CipherService implements CipherServiceAbstraction {
             clearDeletedDate(cipher as { id: string, revisionDate: string; });
         }
 
-        await this.activeAccountService.remove(StorageKey.Ciphers);
-        await this.activeAccountService.save(StorageKey.Ciphers, ciphers,  { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Ciphers);
+        await this.activeAccount.saveInformation(StorageKey.Ciphers, ciphers,  { storageMethod: 'disk' });
     }
 
     async restoreWithServer(id: string): Promise<any> {
@@ -1087,7 +1086,7 @@ export class CipherService implements CipherServiceAbstraction {
             }
 
             if (autofillOnPageLoad) {
-                const autofillOnPageLoadDefault = await this.activeAccountService.get<boolean>(StorageKey.AutoFillOnPageLoadDefault);
+                const autofillOnPageLoadDefault = await this.activeAccount.getInformation<boolean>(StorageKey.AutoFillOnPageLoadDefault);
                 ciphers = ciphers.filter(cipher => cipher.login.autofillOnPageLoad ||
                     (cipher.login.autofillOnPageLoad == null && autofillOnPageLoadDefault !== false));
                 if (ciphers.length === 0) {

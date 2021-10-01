@@ -58,7 +58,7 @@ export class AddEditComponent implements OnInit {
     constructor(protected i18nService: I18nService, protected platformUtilsService: PlatformUtilsService,
         protected environmentService: EnvironmentService, protected datePipe: DatePipe,
         protected sendService: SendService, protected messagingService: MessagingService,
-        protected policyService: PolicyService, protected activeAccountService: ActiveAccountService) {
+        protected policyService: PolicyService, protected activeAccount: ActiveAccountService) {
         this.typeOptions = [
             { name: i18nService.t('sendTypeFile'), value: SendType.File },
             { name: i18nService.t('sendTypeText'), value: SendType.Text },
@@ -107,8 +107,8 @@ export class AddEditComponent implements OnInit {
         this.disableHideEmail = await this.policyService.policyAppliesToUser(PolicyType.SendOptions,
             p => p.data.disableHideEmail);
 
-        this.canAccessPremium = this.activeAccountService.activeAccount.canAccessPremium;
-        this.emailVerified = await this.activeAccountService.get<boolean>(StorageKey.EmailVerified);
+        this.canAccessPremium = this.activeAccount.canAccessPremium;
+        this.emailVerified = await this.activeAccount.getInformation<boolean>(StorageKey.EmailVerified);
         if (!this.canAccessPremium || !this.emailVerified) {
             this.type = SendType.Text;
         }

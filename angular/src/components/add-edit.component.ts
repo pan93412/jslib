@@ -89,7 +89,7 @@ export class AddEditComponent implements OnInit {
         protected auditService: AuditService, protected stateService: StateService,
         protected collectionService: CollectionService, protected messagingService: MessagingService,
         protected eventService: EventService, protected policyService: PolicyService,
-        protected activeAccountService: ActiveAccountService, private organizationService: OrganizationService) {
+        protected activeAccount: ActiveAccountService, private organizationService: OrganizationService) {
         this.typeOptions = [
             { name: i18nService.t('typeLogin'), value: CipherType.Login },
             { name: i18nService.t('typeCard'), value: CipherType.Card },
@@ -151,7 +151,7 @@ export class AddEditComponent implements OnInit {
     }
 
     async init() {
-        const myEmail = this.activeAccountService.activeAccount?.email;
+        const myEmail = this.activeAccount.email;
         this.ownershipOptions.push({ name: myEmail, value: null });
         const orgs = await this.organizationService.getAll();
         orgs.sort(Utils.getSortFunction(this.i18nService, 'name')).forEach(o => {

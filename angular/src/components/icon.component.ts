@@ -36,7 +36,7 @@ export class IconComponent implements OnChanges {
 
     private iconsUrl: string;
 
-    constructor(environmentService: EnvironmentService, private activeAccountService: ActiveAccountService) {
+    constructor(environmentService: EnvironmentService, private activeAccount: ActiveAccountService) {
         this.iconsUrl = environmentService.getIconsUrl();
     }
 
@@ -45,7 +45,7 @@ export class IconComponent implements OnChanges {
         // to avoid this we reset all state variables.
         this.image = null;
         this.fallbackImage = null;
-        this.imageEnabled = !(await this.activeAccountService.get<boolean>(StorageKey.DisableFavicon));
+        this.imageEnabled = !(await this.activeAccount.getInformation<boolean>(StorageKey.DisableFavicon));
         this.load();
     }
 

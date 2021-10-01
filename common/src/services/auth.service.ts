@@ -5,7 +5,6 @@ import { TwoFactorProviderType } from '../enums/twoFactorProviderType';
 
 import { Account } from '../models/domain/account';
 import { AuthResult } from '../models/domain/authResult';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 import { SymmetricCryptoKey } from '../models/domain/symmetricCryptoKey';
 
 import { DeviceRequest } from '../models/request/deviceRequest';
@@ -99,7 +98,7 @@ export class AuthService implements AuthServiceAbstraction {
         protected tokenService: TokenService, protected appIdService: AppIdService,
         private i18nService: I18nService, protected platformUtilsService: PlatformUtilsService,
         private messagingService: MessagingService, private vaultTimeoutService: VaultTimeoutService,
-        private logService: LogService, private activeAccountService: ActiveAccountService,
+        private logService: LogService, private activeAccount: ActiveAccountService,
         private accountsManagementService: AccountsManagementService, private setCryptoKeys = true) {
     }
 
@@ -352,8 +351,8 @@ export class AuthService implements AuthServiceAbstraction {
             tokenResponse.kdf, tokenResponse.kdfIterations,
             clientId, clientSecret, tokenResponse.accessToken, tokenResponse.refreshToken));
 
-        await this.activeAccountService.save(StorageKey.AccessToken,
-            tokenResponse.accessToken, { skipMemory: true } );
+        await this.activeAccount.saveInformation(StorageKey.AccessToken,
+            tokenResponse.accessToken, { storageMethod: 'disk' } );
 
         if (tokenResponse.twoFactorToken != null) {
             await this.tokenService.setTwoFactorToken(tokenResponse.twoFactorToken, email);

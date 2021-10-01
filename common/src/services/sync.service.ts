@@ -41,15 +41,15 @@ export class SyncService implements SyncServiceAbstraction {
         private cryptoService: CryptoService, private collectionService: CollectionService,
         private messagingService: MessagingService,  private policyService: PolicyService,
         private sendService: SendService,  private logoutCallback: (expired: boolean) => Promise<void>,
-        private activeAccountService: ActiveAccountService) {
+        private activeAccount: ActiveAccountService) {
     }
 
     async getLastSync(): Promise<Date> {
-        if (this.activeAccountService.userId == null) {
+        if (this.activeAccount.userId == null) {
             return null;
         }
 
-        const lastSync = await this.activeAccountService.get<any>(StorageKey.LastSync);
+        const lastSync = await this.activeAccount.getInformation<any>(StorageKey.LastSync);
         if (lastSync) {
             return new Date(lastSync);
         }
@@ -58,16 +58,16 @@ export class SyncService implements SyncServiceAbstraction {
     }
 
     async setLastSync(date: Date): Promise<any> {
-        if (this.activeAccountService.userId) {
+        if (this.activeAccount.userId) {
             return;
         }
 
-        await this.activeAccountService.save(StorageKey.LastSync, date.toJSON());
+        await this.activeAccount.saveInformation(StorageKey.LastSync, date.toJSON());
     }
 
     async fullSync(forceSync: boolean, allowThrowOnError = false): Promise<boolean> {
         this.syncStarted();
-        const isAuthenticated = this.activeAccountService.isAuthenticated;
+        const isAuthenticated = this.activeAccount.isAuthenticated;
         if (!isAuthenticated) {
             return this.syncCompleted(false);
         }
@@ -87,7 +87,7 @@ export class SyncService implements SyncServiceAbstraction {
             return this.syncCompleted(false);
         }
 
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         try {
             await this.apiService.refreshIdentityToken();
             const response = await this.apiService.getSync();
@@ -113,14 +113,14 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertFolder(notification: SyncFolderNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             try {
                 const localFolder = await this.folderService.get(notification.id);
                 if ((!isEdit && localFolder == null) ||
                     (isEdit && localFolder != null && localFolder.revisionDate < notification.revisionDate)) {
                     const remoteFolder = await this.apiService.getFolder(notification.id);
                     if (remoteFolder != null) {
-                        const userId = this.activeAccountService.userId;
+                        const userId = this.activeAccount.userId;
                         await this.folderService.upsert(new FolderData(remoteFolder, userId));
                         this.messagingService.send('syncedUpsertedFolder', { folderId: notification.id });
                         return this.syncCompleted(true);
@@ -133,7 +133,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteFolder(notification: SyncFolderNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             await this.folderService.delete(notification.id);
             this.messagingService.send('syncedDeletedFolder', { folderId: notification.id });
             this.syncCompleted(true);
@@ -144,7 +144,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertCipher(notification: SyncCipherNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             try {
                 let shouldUpdate = true;
                 const localCipher = await this.cipherService.get(notification.id);
@@ -183,7 +183,7 @@ export class SyncService implements SyncServiceAbstraction {
                 if (shouldUpdate) {
                     const remoteCipher = await this.apiService.getCipher(notification.id);
                     if (remoteCipher != null) {
-                        const userId = this.activeAccountService.userId;
+                        const userId = this.activeAccount.userId;
                         await this.cipherService.upsert(new CipherData(remoteCipher, userId));
                         this.messagingService.send('syncedUpsertedCipher', { cipherId: notification.id });
                         return this.syncCompleted(true);
@@ -202,7 +202,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteCipher(notification: SyncCipherNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             await this.cipherService.delete(notification.id);
             this.messagingService.send('syncedDeletedCipher', { cipherId: notification.id });
             return this.syncCompleted(true);
@@ -212,14 +212,14 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncUpsertSend(notification: SyncSendNotification, isEdit: boolean): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             try {
                 const localSend = await this.sendService.get(notification.id);
                 if ((!isEdit && localSend == null) ||
                     (isEdit && localSend != null && localSend.revisionDate < notification.revisionDate)) {
                     const remoteSend = await this.apiService.getSend(notification.id);
                     if (remoteSend != null) {
-                        const userId = this.activeAccountService.userId;
+                        const userId = this.activeAccount.userId;
                         await this.sendService.upsert(new SendData(remoteSend, userId));
                         this.messagingService.send('syncedUpsertedSend', { sendId: notification.id });
                         return this.syncCompleted(true);
@@ -232,7 +232,7 @@ export class SyncService implements SyncServiceAbstraction {
 
     async syncDeleteSend(notification: SyncSendNotification): Promise<boolean> {
         this.syncStarted();
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             await this.sendService.delete(notification.id);
             this.messagingService.send('syncedDeletedSend', { sendId: notification.id });
             this.syncCompleted(true);
@@ -272,7 +272,7 @@ export class SyncService implements SyncServiceAbstraction {
     }
 
     private async syncProfile(response: ProfileResponse) {
-        const stamp = await this.activeAccountService.get<string>(StorageKey.SecurityStamp);
+        const stamp = await this.activeAccount.getInformation<string>(StorageKey.SecurityStamp);
         if (stamp != null && stamp !== response.securityStamp) {
             if (this.logoutCallback != null) {
                 await this.logoutCallback(true);
@@ -285,9 +285,9 @@ export class SyncService implements SyncServiceAbstraction {
         await this.cryptoService.setEncPrivateKey(response.privateKey);
         await this.cryptoService.setProviderKeys(response.providers);
         await this.cryptoService.setOrgKeys(response.organizations, response.providerOrganizations);
-        await this.activeAccountService.save(StorageKey.SecurityStamp, response.securityStamp);
-        await this.activeAccountService.save(StorageKey.EmailVerified, response.emailVerified);
-        await this.activeAccountService.save(StorageKey.ForcePasswordReset, response.forcePasswordReset);
+        await this.activeAccount.saveInformation(StorageKey.SecurityStamp, response.securityStamp);
+        await this.activeAccount.saveInformation(StorageKey.EmailVerified, response.emailVerified);
+        await this.activeAccount.saveInformation(StorageKey.ForcePasswordReset, response.forcePasswordReset);
 
         const organizations: { [id: string]: OrganizationData; } = {};
         response.organizations.forEach(o => {
@@ -306,8 +306,8 @@ export class SyncService implements SyncServiceAbstraction {
             }
         });
         return Promise.all([
-            this.activeAccountService.save(StorageKey.Organizations, organizations),
-            this.activeAccountService.save(StorageKey.Providers, providers),
+            this.activeAccount.saveInformation(StorageKey.Organizations, organizations),
+            this.activeAccount.saveInformation(StorageKey.Providers, providers),
         ]);
     }
 

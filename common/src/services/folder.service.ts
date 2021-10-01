@@ -3,7 +3,6 @@ import { StorageKey } from '../enums/storageKey';
 import { FolderData } from '../models/data/folderData';
 
 import { Folder } from '../models/domain/folder';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 import { SymmetricCryptoKey } from '../models/domain/symmetricCryptoKey';
 import { TreeNode } from '../models/domain/treeNode';
 
@@ -29,10 +28,10 @@ const NestingDelimiter = '/';
 export class FolderService implements FolderServiceAbstraction {
     constructor(private cryptoService: CryptoService, private apiService: ApiService,
         private i18nService: I18nService, private cipherService: CipherService,
-        private activeAccountService: ActiveAccountService) { }
+        private activeAccount: ActiveAccountService) { }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Folders, { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Folders, { storageMethod: 'memory' });
     }
 
     async encrypt(model: FolderView, key?: SymmetricCryptoKey): Promise<Folder> {
@@ -43,7 +42,7 @@ export class FolderService implements FolderServiceAbstraction {
     }
 
     async get(id: string): Promise<Folder> {
-        const folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
+        const folders = await this.activeAccount.getInformation<{ [id: string]: FolderData; }>(
             StorageKey.Folders);
         if (folders == null || !folders.hasOwnProperty(id)) {
             return null;
@@ -53,7 +52,7 @@ export class FolderService implements FolderServiceAbstraction {
     }
 
     async getAll(): Promise<Folder[]> {
-        const folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
+        const folders = await this.activeAccount.getInformation<{ [id: string]: FolderData; }>(
             StorageKey.Folders);
         const response: Folder[] = [];
         for (const id in folders) {
@@ -65,8 +64,8 @@ export class FolderService implements FolderServiceAbstraction {
     }
 
     async getAllDecrypted(): Promise<FolderView[]> {
-        if (await this.activeAccountService.has(StorageKey.Folders, { skipDisk: true })) {
-            return this.activeAccountService.get(StorageKey.Folders, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.Folders, { storageMethod: 'memory' })) {
+            return this.activeAccount.getInformation(StorageKey.Folders, { storageMethod: 'memory' });
         }
 
         const hasKey = await this.cryptoService.hasKey();
@@ -88,7 +87,7 @@ export class FolderService implements FolderServiceAbstraction {
         noneFolder.name = this.i18nService.t('noneFolder');
         decFolders.push(noneFolder);
 
-        await this.activeAccountService.save(StorageKey.Folders, decFolders, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Folders, decFolders, { storageMethod: 'memory' });
         return decFolders;
     }
 
@@ -121,14 +120,14 @@ export class FolderService implements FolderServiceAbstraction {
             response = await this.apiService.putFolder(folder.id, request);
         }
 
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = new FolderData(response, userId);
         await this.upsert(data);
     }
 
     async upsert(folder: FolderData | FolderData[]): Promise<any> {
-        let folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
-            StorageKey.Folders, { skipMemory: true });
+        let folders = await this.activeAccount.getInformation<{ [id: string]: FolderData; }>(
+            StorageKey.Folders, { storageMethod: 'disk' });
         if (folders == null) {
             folders = {};
         }
@@ -142,22 +141,22 @@ export class FolderService implements FolderServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Folders);
+        await this.activeAccount.saveInformation(StorageKey.Folders, folders, { storageMethod: 'disk' });
     }
 
     async replace(folders: { [id: string]: FolderData; }): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Folders);
+        await this.activeAccount.saveInformation(StorageKey.Folders, folders, { storageMethod: 'disk' });
     }
 
     async clear(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Folders);
+        await this.activeAccount.removeInformation(StorageKey.Folders);
     }
 
     async delete(id: string | string[]): Promise<any> {
-        const folders = await this.activeAccountService.get<{ [id: string]: FolderData; }>(
-            StorageKey.Folders, { skipMemory: true });
+        const folders = await this.activeAccount.getInformation<{ [id: string]: FolderData; }>(
+            StorageKey.Folders, { storageMethod: 'disk' });
         if (folders == null) {
             return;
         }
@@ -173,11 +172,11 @@ export class FolderService implements FolderServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Folders);
-        await this.activeAccountService.save(StorageKey.Folders, folders, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Folders);
+        await this.activeAccount.saveInformation(StorageKey.Folders, folders, { storageMethod: 'disk' });
 
         // Items in a deleted folder are re-assigned to "No Folder"
-        const ciphers = await this.activeAccountService.get<{ [id: string]: CipherData; }>(StorageKey.Ciphers, { skipMemory: true });
+        const ciphers = await this.activeAccount.getInformation<{ [id: string]: CipherData; }>(StorageKey.Ciphers, { storageMethod: 'disk' });
         if (ciphers != null) {
             const updates: CipherData[] = [];
             for (const cId in ciphers) {

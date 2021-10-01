@@ -45,7 +45,7 @@ export class LockComponent implements OnInit {
         protected platformUtilsService: PlatformUtilsService, protected messagingService: MessagingService,
         protected cryptoService: CryptoService, protected vaultTimeoutService: VaultTimeoutService,
         protected environmentService: EnvironmentService, protected stateService: StateService,
-        protected apiService: ApiService, protected activeAccountService: ActiveAccountService) { }
+        protected apiService: ApiService, protected activeAccount: ActiveAccountService) { }
 
     async ngOnInit() {
         this.pinSet = await this.vaultTimeoutService.isPinLockSet();
@@ -53,8 +53,8 @@ export class LockComponent implements OnInit {
         this.supportsBiometric = await this.platformUtilsService.supportsBiometric();
         this.biometricLock = await this.vaultTimeoutService.isBiometricLockSet() &&
             (await this.cryptoService.hasKeyStored('biometric') || !this.platformUtilsService.supportsSecureStorage());
-        this.biometricText = await this.activeAccountService.get<string>(StorageKey.BiometricText);
-        this.email = this.activeAccountService.activeAccount.email;
+        this.biometricText = await this.activeAccount.getInformation<string>(StorageKey.BiometricText);
+        this.email = this.activeAccount.email;
 
         const webVaultUrl = this.environmentService.getWebVaultUrl();
         const vaultUrl = webVaultUrl === 'https://vault.bitwarden.com' ? 'https://bitwarden.com' : webVaultUrl;
@@ -73,8 +73,8 @@ export class LockComponent implements OnInit {
             return;
         }
 
-        const kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
-        const kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
+        const kdf = await this.activeAccount.getInformation<KdfType>(StorageKey.KdfType);
+        const kdfIterations = await this.activeAccount.getInformation<number>(StorageKey.KdfIterations);
 
         if (this.pinLock) {
             let failed = true;
@@ -83,7 +83,7 @@ export class LockComponent implements OnInit {
                     const key = await this.cryptoService.makeKeyFromPin(this.pin, this.email, kdf, kdfIterations,
                         this.vaultTimeoutService.pinProtectedKey);
                     const encKey = await this.cryptoService.getEncKey(key);
-                    const protectedPin = await this.activeAccountService.get<string>(StorageKey.ProtectedPin);
+                    const protectedPin = await this.activeAccount.getInformation<string>(StorageKey.ProtectedPin);
                     const decPin = await this.cryptoService.decryptToUtf8(new EncString(protectedPin), encKey);
                     failed = decPin !== this.pin;
                     if (!failed) {
@@ -132,7 +132,7 @@ export class LockComponent implements OnInit {
 
             if (passwordValid) {
                 if (this.pinSet[0]) {
-                    const protectedPin = await this.activeAccountService.get<string>(StorageKey.ProtectedPin);
+                    const protectedPin = await this.activeAccount.getInformation<string>(StorageKey.ProtectedPin);
                     const encKey = await this.cryptoService.getEncKey(key);
                     const decPin = await this.cryptoService.decryptToUtf8(new EncString(protectedPin), encKey);
                     const pinKey = await this.cryptoService.makePinKey(decPin, this.email, kdf, kdfIterations);
@@ -181,7 +181,7 @@ export class LockComponent implements OnInit {
     private async doContinue() {
         this.vaultTimeoutService.biometricLocked = false;
         this.vaultTimeoutService.everBeenUnlocked = true;
-        const disableFavicon = await this.activeAccountService.get<boolean>(StorageKey.DisableFavicon);
+        const disableFavicon = await this.activeAccount.getInformation<boolean>(StorageKey.DisableFavicon);
         await this.stateService.save(StorageKey.DisableFavicon, !!disableFavicon);
         this.messagingService.send('unlocked');
         if (this.onSuccessfulSubmit != null) {

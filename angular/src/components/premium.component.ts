@@ -12,10 +12,10 @@ export class PremiumComponent implements OnInit {
     refreshPromise: Promise<any>;
 
     constructor(protected i18nService: I18nService, protected platformUtilsService: PlatformUtilsService,
-        protected apiService: ApiService, protected activeAccountService: ActiveAccountService) { }
+        protected apiService: ApiService, protected activeAccount: ActiveAccountService) { }
 
     async ngOnInit() {
-        this.isPremium = this.activeAccountService.activeAccount.canAccessPremium;
+        this.isPremium = this.activeAccount.canAccessPremium;
     }
 
     async refresh() {
@@ -23,7 +23,7 @@ export class PremiumComponent implements OnInit {
             this.refreshPromise = this.apiService.refreshIdentityToken();
             await this.refreshPromise;
             this.platformUtilsService.showToast('success', null, this.i18nService.t('refreshComplete'));
-            this.isPremium = this.activeAccountService.activeAccount.canAccessPremium;
+            this.isPremium = this.activeAccount.canAccessPremium;
         } catch { }
     }
 

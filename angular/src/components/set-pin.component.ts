@@ -9,8 +9,6 @@ import { StorageKey } from 'jslib-common/enums/storageKey';
 
 import { Utils } from 'jslib-common/misc/utils';
 
-import { SettingStorageOptions } from 'jslib-common/models/domain/settingStorageOptions';
-
 import { ModalRef } from './modal/modal.ref';
 
 @Directive()
@@ -21,7 +19,7 @@ export class SetPinComponent {
     masterPassOnRestart = true;
 
     constructor(private modalRef: ModalRef, private cryptoService: CryptoService,
-        private vaultTimeoutService: VaultTimeoutService, private activeAccountService: ActiveAccountService) { }
+        private vaultTimeoutService: VaultTimeoutService, private activeAccount: ActiveAccountService) { }
 
     toggleVisibility() {
         this.showPin = !this.showPin;
@@ -32,18 +30,18 @@ export class SetPinComponent {
             this.modalRef.close(false);
         }
 
-        const kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
-        const kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
-        const email = this.activeAccountService.activeAccount?.email;
+        const kdf = await this.activeAccount.getInformation<KdfType>(StorageKey.KdfType);
+        const kdfIterations = await this.activeAccount.getInformation<number>(StorageKey.KdfIterations);
+        const email = this.activeAccount.email;
         const pinKey = await this.cryptoService.makePinKey(this.pin, email, kdf, kdfIterations);
         const key = await this.cryptoService.getKey();
         const pinProtectedKey = await this.cryptoService.encrypt(key.key, pinKey);
         if (this.masterPassOnRestart) {
             const encPin = await this.cryptoService.encrypt(this.pin);
-            await this.activeAccountService.save(StorageKey.ProtectedPin, encPin.encryptedString, { skipMemory: true });
+            await this.activeAccount.saveInformation(StorageKey.ProtectedPin, encPin.encryptedString, { skipMemory: true });
             this.vaultTimeoutService.pinProtectedKey = pinProtectedKey;
         } else {
-            await this.activeAccountService.save(StorageKey.PinProtectedKey, pinProtectedKey.encryptedString, { skipMemory: true });
+            await this.activeAccount.saveInformation(StorageKey.PinProtectedKey, pinProtectedKey.encryptedString, { skipMemory: true });
         }
 
         this.modalRef.close(true);

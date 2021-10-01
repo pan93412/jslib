@@ -12,10 +12,10 @@ export class LockGuardService implements CanActivate {
 
     protected homepage = 'vault';
     constructor(private vaultTimeoutService: VaultTimeoutService, private router: Router,
-        private activeAccountService: ActiveAccountService) { }
+        private activeAccount: ActiveAccountService) { }
 
     async canActivate() {
-        const isAuthed = this.activeAccountService.activeAccount.isAuthenticated;
+        const isAuthed = this.activeAccount.isAuthenticated;
         if (isAuthed) {
             const locked = await this.vaultTimeoutService.isLocked();
             if (locked) {

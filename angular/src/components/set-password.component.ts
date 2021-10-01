@@ -45,9 +45,9 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
         messagingService: MessagingService, passwordGenerationService: PasswordGenerationService,
         platformUtilsService: PlatformUtilsService, policyService: PolicyService,
         protected router: Router, private apiService: ApiService,
-        private syncService: SyncService, private route: ActivatedRoute, activeAccountService: ActiveAccountService) {
+        private syncService: SyncService, private route: ActivatedRoute, activeAccount: ActiveAccountService) {
         super(i18nService, cryptoService, messagingService, passwordGenerationService,
-            platformUtilsService, policyService, activeAccountService);
+            platformUtilsService, policyService, activeAccount);
     }
 
     async ngOnInit() {
@@ -106,7 +106,7 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
                     if (response == null) {
                         throw new Error(this.i18nService.t('resetPasswordOrgKeysError'));
                     }
-                    const userId = this.activeAccountService.activeAccount.userId;
+                    const userId = this.activeAccount.userId;
                     const publicKey = Utils.fromB64ToArray(response.publicKey);
 
                     // RSA Encrypt user's encKey.key with organization public key
@@ -142,8 +142,8 @@ export class SetPasswordComponent extends BaseChangePasswordComponent {
     }
 
     private async onSetPasswordSuccess(key: SymmetricCryptoKey, encKey: [SymmetricCryptoKey, EncString], keys: [string, EncString]) {
-        await this.activeAccountService.save(StorageKey.KdfType, this.kdf);
-        await this.activeAccountService.save(StorageKey.KdfIterations, this.kdfIterations);
+        await this.activeAccount.saveInformation(StorageKey.KdfType, this.kdf);
+        await this.activeAccount.saveInformation(StorageKey.KdfIterations, this.kdfIterations);
         await this.cryptoService.setKey(key);
         await this.cryptoService.setEncKey(encKey[1].encryptedString);
         await this.cryptoService.setEncPrivateKey(keys[1].encryptedString);

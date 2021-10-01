@@ -29,29 +29,29 @@ import { ProfileProviderResponse } from '../models/response/profileProviderRespo
 
 export class CryptoService implements CryptoServiceAbstraction {
     constructor(private cryptoFunctionService: CryptoFunctionService, protected platformUtilService: PlatformUtilsService,
-        protected logService: LogService, protected activeAccountService: ActiveAccountService) {
+        protected logService: LogService, protected activeAccount: ActiveAccountService) {
     }
 
     async setKey(key: SymmetricCryptoKey): Promise<any> {
-        await this.activeAccountService.save(StorageKey.CryptoMasterKey, key, {
-            skipDisk: true,
+        await this.activeAccount.saveInformation(StorageKey.CryptoMasterKey, key, {
+            storageMethod: 'memory',
         });
 
         let suffix: KeySuffixOptions = await this.shouldStoreKey('auto') ? 'auto' : null;
         suffix = suffix ?? await this.shouldStoreKey('biometric') ? 'biometric' : null;
         if (suffix) {
-            await this.activeAccountService.save(StorageKey.CryptoMasterKey, key.keyB64, {
-                skipMemory: true,
+            await this.activeAccount.saveInformation(StorageKey.CryptoMasterKey, key.keyB64, {
+                storageMethod: 'disk',
                 useSecureStorage: true,
                 keySuffix: suffix,
             });
         } else {
-            await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { skipMemory: true });
+            await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { storageMethod: 'disk' });
         }
     }
 
     async setKeyHash(keyHash: string): Promise<{}> {
-        return await this.activeAccountService.save(StorageKey.KeyHash, keyHash);
+        return await this.activeAccount.saveInformation(StorageKey.KeyHash, keyHash);
     }
 
     async setEncKey(encKey: string): Promise<{}> {
@@ -59,8 +59,8 @@ export class CryptoService implements CryptoServiceAbstraction {
             return;
         }
 
-        await this.activeAccountService.remove(StorageKey.CryptoSymmetricKey);
-        await this.activeAccountService.save(StorageKey.CryptoSymmetricKey, encKey, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.CryptoSymmetricKey);
+        await this.activeAccount.saveInformation(StorageKey.CryptoSymmetricKey, encKey, { storageMethod: 'disk' });
     }
 
     async setEncPrivateKey(encPrivateKey: string): Promise<{}> {
@@ -68,8 +68,8 @@ export class CryptoService implements CryptoServiceAbstraction {
             return;
         }
 
-        await this.activeAccountService.remove(StorageKey.EncPrivateKey);
-        await this.activeAccountService.save(StorageKey.EncPrivateKey, encPrivateKey, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.EncPrivateKey);
+        await this.activeAccount.saveInformation(StorageKey.EncPrivateKey, encPrivateKey, { storageMethod: 'disk' });
     }
 
     async setOrgKeys(orgs: ProfileOrganizationResponse[], providerOrgs: ProfileProviderOrganizationResponse[]): Promise<{}> {
@@ -85,8 +85,8 @@ export class CryptoService implements CryptoServiceAbstraction {
             orgKeys[providerOrg.id] = (await this.rsaEncrypt(decValue)).encryptedString;
         }
 
-        await this.activeAccountService.remove(StorageKey.EncOrgKeys);
-        return await this.activeAccountService.save(StorageKey.EncOrgKeys, orgKeys, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.EncOrgKeys);
+        return await this.activeAccount.saveInformation(StorageKey.EncOrgKeys, orgKeys, { storageMethod: 'disk' });
     }
 
     async setProviderKeys(providers: ProfileProviderResponse[]): Promise<{}> {
@@ -95,13 +95,13 @@ export class CryptoService implements CryptoServiceAbstraction {
             providerKeys[provider.id] = provider.key;
         });
 
-        await this.activeAccountService.remove(StorageKey.EncProviderKeys);
-        return await this.activeAccountService.save(StorageKey.EncProviderKeys, providerKeys, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.EncProviderKeys);
+        return await this.activeAccount.saveInformation(StorageKey.EncProviderKeys, providerKeys, { storageMethod: 'disk' });
     }
 
     async getKey(keySuffix?: KeySuffixOptions): Promise<SymmetricCryptoKey> {
-        if (await this.activeAccountService.has(StorageKey.CryptoMasterKey, { skipDisk: true })) {
-            const key = await this.activeAccountService.get<SymmetricCryptoKey>(StorageKey.CryptoMasterKey, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.CryptoMasterKey, { storageMethod: 'memory' })) {
+            const key = await this.activeAccount.getInformation<SymmetricCryptoKey>(StorageKey.CryptoMasterKey, { storageMethod: 'memory' });
             return key;
         }
 
@@ -122,7 +122,7 @@ export class CryptoService implements CryptoServiceAbstraction {
 
             if (!await this.validateKey(symmetricKey)) {
                 this.logService.warning('Wrong key, throwing away stored key');
-                await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, skipMemory: true });
+                await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, storageMethod: 'disk' });
                 return null;
             }
 
@@ -132,16 +132,16 @@ export class CryptoService implements CryptoServiceAbstraction {
     }
 
     async getKeyHash(): Promise<string> {
-        if (await this.activeAccountService.has(StorageKey.KeyHash, { skipDisk: true })) {
-            return await this.activeAccountService.get<string>(StorageKey.KeyHash, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.KeyHash, { storageMethod: 'memory' })) {
+            return await this.activeAccount.getInformation<string>(StorageKey.KeyHash, { storageMethod: 'memory' });
         }
 
-        const keyHash = await this.activeAccountService.get<string>(StorageKey.KeyHash, { skipMemory: true });
+        const keyHash = await this.activeAccount.getInformation<string>(StorageKey.KeyHash, { storageMethod: 'disk' });
         if (keyHash != null) {
-            await this.activeAccountService.save(StorageKey.KeyHash, keyHash, { skipDisk: true });
+            await this.activeAccount.saveInformation(StorageKey.KeyHash, keyHash, { storageMethod: 'memory' });
         }
 
-        return keyHash == null ? null : await this.activeAccountService.get<string>(StorageKey.KeyHash);
+        return keyHash == null ? null : await this.activeAccount.getInformation<string>(StorageKey.KeyHash);
     }
 
     async compareAndUpdateKeyHash(masterPassword: string, key: SymmetricCryptoKey): Promise<boolean> {
@@ -165,11 +165,11 @@ export class CryptoService implements CryptoServiceAbstraction {
 
     @sequentialize(() => 'getEncKey')
     async getEncKey(key: SymmetricCryptoKey = null): Promise<SymmetricCryptoKey> {
-        if (await this.activeAccountService.has(StorageKey.CryptoSymmetricKey, { skipDisk: true })) {
-            return await this.activeAccountService.get<SymmetricCryptoKey>(StorageKey.CryptoSymmetricKey, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.CryptoSymmetricKey, { storageMethod: 'memory' })) {
+            return await this.activeAccount.getInformation<SymmetricCryptoKey>(StorageKey.CryptoSymmetricKey, { storageMethod: 'memory' });
         }
 
-        const encKey = await this.activeAccountService.get<string>(StorageKey.CryptoSymmetricKey, { skipMemory: true });
+        const encKey = await this.activeAccount.getInformation<string>(StorageKey.CryptoSymmetricKey, { storageMethod: 'disk' });
         if (encKey == null) {
             return null;
         }
@@ -196,13 +196,13 @@ export class CryptoService implements CryptoServiceAbstraction {
             return null;
         }
         const symmetricCryptoKey = new SymmetricCryptoKey(decEncKey);
-        await this.activeAccountService.save(StorageKey.CryptoSymmetricKey, symmetricCryptoKey, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.CryptoSymmetricKey, symmetricCryptoKey, { storageMethod: 'memory' });
         return symmetricCryptoKey;
     }
 
     async getPublicKey(): Promise<ArrayBuffer> {
-        if (await this.activeAccountService.has(StorageKey.PublicKey)) {
-            return await this.activeAccountService.get(StorageKey.PublicKey);
+        if (await this.activeAccount.hasInformation(StorageKey.PublicKey)) {
+            return await this.activeAccount.getInformation(StorageKey.PublicKey);
         }
 
         const privateKey = await this.getPrivateKey();
@@ -211,22 +211,22 @@ export class CryptoService implements CryptoServiceAbstraction {
         }
 
         const publicKey = await this.cryptoFunctionService.rsaExtractPublicKey(privateKey);
-        await this.activeAccountService.save(StorageKey.PublicKey, publicKey, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.PublicKey, publicKey, { storageMethod: 'memory' });
         return publicKey;
     }
 
     async getPrivateKey(): Promise<ArrayBuffer> {
-        if (await this.activeAccountService.has(StorageKey.EncPrivateKey, { skipDisk: true })) {
-            return await this.activeAccountService.get<ArrayBuffer>(StorageKey.EncPrivateKey, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.EncPrivateKey, { storageMethod: 'memory' })) {
+            return await this.activeAccount.getInformation<ArrayBuffer>(StorageKey.EncPrivateKey, { storageMethod: 'memory' });
         }
 
-        const encPrivateKey = await this.activeAccountService.get<string>(StorageKey.EncPrivateKey, { skipMemory: true });
+        const encPrivateKey = await this.activeAccount.getInformation<string>(StorageKey.EncPrivateKey, { storageMethod: 'disk' });
         if (encPrivateKey == null) {
             return null;
         }
 
         const privateKey = await this.decryptToBytes(new EncString(encPrivateKey), null);
-        await this.activeAccountService.save(StorageKey.EncPrivateKey, privateKey, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.EncPrivateKey, privateKey, { storageMethod: 'memory' });
         return privateKey;
     }
 
@@ -245,14 +245,14 @@ export class CryptoService implements CryptoServiceAbstraction {
     @sequentialize(() => 'getOrgKeys')
     async getOrgKeys(): Promise<Map<string, SymmetricCryptoKey>> {
         let orgKeys: Map<string, SymmetricCryptoKey> = new Map<string, SymmetricCryptoKey>();
-        if (await this.activeAccountService.has(StorageKey.EncOrgKeys, { skipDisk: true })) {
-            orgKeys = await this.activeAccountService.get<Map<string, SymmetricCryptoKey>>(StorageKey.EncOrgKeys, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.EncOrgKeys, { storageMethod: 'memory' })) {
+            orgKeys = await this.activeAccount.getInformation<Map<string, SymmetricCryptoKey>>(StorageKey.EncOrgKeys, { storageMethod: 'memory' });
             if (orgKeys.size > 0) {
                 return orgKeys;
             }
         }
 
-        const encOrgKeys = await this.activeAccountService.get<any>(StorageKey.EncOrgKeys, { skipMemory: true });
+        const encOrgKeys = await this.activeAccount.getInformation<any>(StorageKey.EncOrgKeys, { storageMethod: 'disk' });
         if (encOrgKeys == null) {
             return null;
         }
@@ -270,7 +270,7 @@ export class CryptoService implements CryptoServiceAbstraction {
         }
 
         if (setKey) {
-            await this.activeAccountService.save(StorageKey.EncOrgKeys, orgKeys, { skipDisk: true });
+            await this.activeAccount.saveInformation(StorageKey.EncOrgKeys, orgKeys, { storageMethod: 'memory' });
         }
 
         return orgKeys;
@@ -292,14 +292,14 @@ export class CryptoService implements CryptoServiceAbstraction {
     @sequentialize(() => 'getProviderKeys')
     async getProviderKeys(): Promise<Map<string, SymmetricCryptoKey>> {
         let providerKeys: Map<string, SymmetricCryptoKey> = new Map<string, SymmetricCryptoKey>();
-        if (await this.activeAccountService.has(StorageKey.EncProviderKeys, { skipDisk: true })) {
-            providerKeys = await this.activeAccountService.get<Map<string, SymmetricCryptoKey>>(StorageKey.EncProviderKeys, { skipDisk: true });
+        if (await this.activeAccount.hasInformation(StorageKey.EncProviderKeys, { storageMethod: 'memory' })) {
+            providerKeys = await this.activeAccount.getInformation<Map<string, SymmetricCryptoKey>>(StorageKey.EncProviderKeys, { storageMethod: 'memory' });
             if (providerKeys.size > 0) {
                 return providerKeys;
             }
         }
 
-        const encProviderKeys = await this.activeAccountService.get<any>(StorageKey.EncProviderKeys);
+        const encProviderKeys = await this.activeAccount.getInformation<any>(StorageKey.EncProviderKeys);
         if (encProviderKeys == null) {
             return null;
         }
@@ -317,7 +317,7 @@ export class CryptoService implements CryptoServiceAbstraction {
         }
 
         if (setKey) {
-            await this.activeAccountService.save(StorageKey.EncProviderKeys, providerKeys, { skipDisk: true });
+            await this.activeAccount.saveInformation(StorageKey.EncProviderKeys, providerKeys, { storageMethod: 'memory' });
         }
 
         return providerKeys;
@@ -341,53 +341,53 @@ export class CryptoService implements CryptoServiceAbstraction {
     }
 
     async hasKeyInMemory(): Promise<boolean> {
-        return await this.activeAccountService.has(StorageKey.CryptoMasterKey, { skipDisk: true });
+        return await this.activeAccount.hasInformation(StorageKey.CryptoMasterKey, { storageMethod: 'memory' });
     }
 
     async hasKeyStored(keySuffix: KeySuffixOptions): Promise<boolean> {
-        return await this.activeAccountService.has(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, skipMemory: true, useSecureStorage: true });
+        return await this.activeAccount.hasInformation(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, storageMethod: 'disk', useSecureStorage: true });
     }
 
     async hasEncKey(): Promise<boolean> {
-        return await this.activeAccountService.has(StorageKey.CryptoSymmetricKey);
+        return await this.activeAccount.hasInformation(StorageKey.CryptoSymmetricKey);
     }
 
     async clearKey(clearSecretStorage: boolean = true): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.CryptoMasterKey);
-        await this.activeAccountService.remove(StorageKey.LegacyEtmKey);
-        await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { useSecureStorage: true, skipDisk: !clearSecretStorage, keySuffix: 'auto' });
-        await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { useSecureStorage: true, skipDisk: !clearSecretStorage, keySuffix: 'biometric' });
+        await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey);
+        await this.activeAccount.removeInformation(StorageKey.LegacyEtmKey);
+        await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { useSecureStorage: true, storageMethod: !clearSecretStorage ? 'memory' : 'both', keySuffix: 'auto' });
+        await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { useSecureStorage: true, storageMethod: !clearSecretStorage ? 'memory' : 'both', keySuffix: 'biometric' });
     }
 
     async clearStoredKey(keySuffix: KeySuffixOptions) {
-        await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, useSecureStorage: true, skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, useSecureStorage: true, storageMethod: 'disk' });
     }
 
     async clearKeyHash(): Promise<any> {
-        return await this.activeAccountService.remove(StorageKey.KeyHash);
+        return await this.activeAccount.removeInformation(StorageKey.KeyHash);
     }
 
     async clearEncKey(memoryOnly?: boolean): Promise<any> {
-        return await this.activeAccountService.remove(StorageKey.CryptoSymmetricKey, { skipDisk: memoryOnly });
+        return await this.activeAccount.removeInformation(StorageKey.CryptoSymmetricKey, { storageMethod: memoryOnly ? 'memory' : 'both' });
     }
 
     clearKeyPair(memoryOnly?: boolean): Promise<any> {
         return Promise.all([
-            this.activeAccountService.remove(StorageKey.EncPrivateKey, { skipDisk: memoryOnly } ),
-            this.activeAccountService.remove(StorageKey.PublicKey),
+            this.activeAccount.removeInformation(StorageKey.EncPrivateKey, { storageMethod: memoryOnly ? 'memory' : 'both' } ),
+            this.activeAccount.removeInformation(StorageKey.PublicKey),
         ]);
     }
 
     async clearOrgKeys(memoryOnly?: boolean): Promise<any> {
-        return await this.activeAccountService.remove(StorageKey.EncOrgKeys, { skipDisk: memoryOnly });
+        return await this.activeAccount.removeInformation(StorageKey.EncOrgKeys, { storageMethod: memoryOnly ? 'memory' : 'both' });
     }
 
     async clearProviderKeys(memoryOnly?: boolean): Promise<any> {
-        return await this.activeAccountService.remove(StorageKey.EncProviderKeys, { skipDisk: memoryOnly });
+        return await this.activeAccount.removeInformation(StorageKey.EncProviderKeys, { storageMethod: memoryOnly ? 'memory' : 'both' });
     }
 
     async clearPinProtectedKey(): Promise<any> {
-        return await this.activeAccountService.remove(StorageKey.PinProtectedKey);
+        return await this.activeAccount.removeInformation(StorageKey.PinProtectedKey);
     }
 
     async clearKeys(): Promise<any> {
@@ -426,7 +426,7 @@ export class CryptoService implements CryptoServiceAbstraction {
         protectedKeyCs: EncString = null):
         Promise<SymmetricCryptoKey> {
         if (protectedKeyCs == null) {
-            const pinProtectedKey = await this.activeAccountService.get<string>(StorageKey.PinProtectedKey);
+            const pinProtectedKey = await this.activeAccount.getInformation<string>(StorageKey.PinProtectedKey);
             if (pinProtectedKey == null) {
                 throw new Error('No PIN protected key found.');
             }
@@ -681,7 +681,7 @@ export class CryptoService implements CryptoServiceAbstraction {
 
     async validateKey(key: SymmetricCryptoKey) {
         try {
-            const encPrivateKey = await this.activeAccountService.get<string>(StorageKey.EncPrivateKey, { skipMemory: true });
+            const encPrivateKey = await this.activeAccount.getInformation<string>(StorageKey.EncPrivateKey, { storageMethod: 'disk' });
             const encKey = await this.getEncKey(key);
             if (encPrivateKey == null || encKey == null) {
                 return false;
@@ -702,18 +702,17 @@ export class CryptoService implements CryptoServiceAbstraction {
     protected async shouldStoreKey(keySuffix: KeySuffixOptions) {
         let shouldStoreKey = false;
         if (keySuffix === 'auto') {
-            const vaultTimeout = await this.activeAccountService.get<number>(StorageKey.VaultTimeout);
+            const vaultTimeout = await this.activeAccount.getInformation<number>(StorageKey.VaultTimeout);
             shouldStoreKey = vaultTimeout == null;
         } else if (keySuffix === 'biometric') {
-            const biometricUnlock = await this.activeAccountService.get<boolean>(StorageKey.BiometricUnlock);
+            const biometricUnlock = await this.activeAccount.getInformation<boolean>(StorageKey.BiometricUnlock);
             shouldStoreKey = biometricUnlock && this.platformUtilService.supportsSecureStorage();
         }
         return shouldStoreKey;
     }
 
     protected async retrieveKeyFromStorage(keySuffix: KeySuffixOptions) {
-        const key = await this.activeAccountService.get<string>(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, skipMemory: true, useSecureStorage: true });
-        return key;
+        return await this.activeAccount.getInformation<string>(StorageKey.CryptoMasterKey, { keySuffix: keySuffix, storageMethod: 'disk', useSecureStorage: true });
     }
 
     private async aesEncrypt(data: ArrayBuffer, key: SymmetricCryptoKey): Promise<EncryptedObject> {
@@ -810,10 +809,10 @@ export class CryptoService implements CryptoServiceAbstraction {
         if (encType === EncryptionType.AesCbc128_HmacSha256_B64 &&
             key.encType === EncryptionType.AesCbc256_B64) {
             // Old encrypt-then-mac scheme, make a new key
-            let legacyKey = await this.activeAccountService.get<SymmetricCryptoKey>(StorageKey.LegacyEtmKey, { skipDisk: true });
+            let legacyKey = await this.activeAccount.getInformation<SymmetricCryptoKey>(StorageKey.LegacyEtmKey, { storageMethod: 'memory' });
             if (legacyKey == null) {
                 legacyKey = new SymmetricCryptoKey(key.key, EncryptionType.AesCbc128_HmacSha256_B64);
-                await this.activeAccountService.save(StorageKey.LegacyEtmKey, legacyKey, { skipDisk: true });
+                await this.activeAccount.saveInformation(StorageKey.LegacyEtmKey, legacyKey, { storageMethod: 'memory' });
             }
             return legacyKey;
         }

@@ -32,9 +32,9 @@ export class UpdateTempPasswordComponent extends BaseChangePasswordComponent {
     constructor(i18nService: I18nService, platformUtilsService: PlatformUtilsService,
         passwordGenerationService: PasswordGenerationService, policyService: PolicyService,
         cryptoService: CryptoService, messagingService: MessagingService,
-        private apiService: ApiService, activeAccountService: ActiveAccountService) {
+        private apiService: ApiService, activeAccount: ActiveAccountService) {
         super(i18nService, cryptoService, messagingService, passwordGenerationService,
-            platformUtilsService, policyService, activeAccountService);
+            platformUtilsService, policyService, activeAccount);
     }
 
     togglePassword(confirmField: boolean) {
@@ -44,9 +44,9 @@ export class UpdateTempPasswordComponent extends BaseChangePasswordComponent {
 
     async setupSubmitActions(): Promise<boolean> {
         this.enforcedPolicyOptions = await this.policyService.getMasterPasswordPolicyOptions();
-        this.email = this.activeAccountService.activeAccount.email;
-        this.kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
-        this.kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
+        this.email = this.activeAccount.email;
+        this.kdf = await this.activeAccount.getInformation<KdfType>(StorageKey.KdfType);
+        this.kdfIterations = await this.activeAccount.getInformation<number>(StorageKey.KdfIterations);
         return true;
     }
 

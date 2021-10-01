@@ -10,7 +10,6 @@ import { EncString } from '../models/domain/encString';
 import { Send } from '../models/domain/send';
 import { SendFile } from '../models/domain/sendFile';
 import { SendText } from '../models/domain/sendText';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 import { SymmetricCryptoKey } from '../models/domain/symmetricCryptoKey';
 
 import { SendType } from '../enums/sendType';
@@ -31,10 +30,10 @@ import { Utils } from '../misc/utils';
 export class SendService implements SendServiceAbstraction {
     constructor(private cryptoService: CryptoService, private apiService: ApiService,
         private fileUploadService: FileUploadService, private i18nService: I18nService,
-        private cryptoFunctionService: CryptoFunctionService, private activeAccountService: ActiveAccountService) { }
+        private cryptoFunctionService: CryptoFunctionService, private activeAccount: ActiveAccountService) { }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Sends, { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Sends, { storageMethod: 'memory' });
     }
 
     async encrypt(model: SendView, file: File | ArrayBuffer, password: string,
@@ -78,8 +77,8 @@ export class SendService implements SendServiceAbstraction {
     }
 
     async get(id: string): Promise<Send> {
-        const sends = await this.activeAccountService.get<{ [id: string]: SendData; }>(
-            StorageKey.Sends, { skipMemory: true });
+        const sends = await this.activeAccount.getInformation<{ [id: string]: SendData; }>(
+            StorageKey.Sends, { storageMethod: 'disk' });
         if (sends == null || !sends.hasOwnProperty(id)) {
             return null;
         }
@@ -88,8 +87,8 @@ export class SendService implements SendServiceAbstraction {
     }
 
     async getAll(): Promise<Send[]> {
-        const sends = await this.activeAccountService.get<{ [id: string]: SendData; }>(
-            StorageKey.Sends, { skipMemory: true });
+        const sends = await this.activeAccount.getInformation<{ [id: string]: SendData; }>(
+            StorageKey.Sends, { storageMethod: 'disk' });
         const response: Send[] = [];
         for (const id in sends) {
             if (sends.hasOwnProperty(id)) {
@@ -101,8 +100,8 @@ export class SendService implements SendServiceAbstraction {
 
     async getAllDecrypted(): Promise<SendView[]> {
         let decSends: SendView[] = [];
-        if (await this.activeAccountService.has(StorageKey.Sends, { skipDisk: true })) {
-            decSends = await this.activeAccountService.get<SendView[]>(StorageKey.Sends);
+        if (await this.activeAccount.hasInformation(StorageKey.Sends, { storageMethod: 'memory' })) {
+            decSends = await this.activeAccount.getInformation<SendView[]>(StorageKey.Sends);
             return decSends;
         }
 
@@ -120,7 +119,7 @@ export class SendService implements SendServiceAbstraction {
         await Promise.all(promises);
         decSends.sort(Utils.getSortFunction(this.i18nService, 'name'));
 
-        await this.activeAccountService.save(StorageKey.Sends, decSends, { skipDisk: true });
+        await this.activeAccount.saveInformation(StorageKey.Sends, decSends, { storageMethod: 'memory' });
         return decSends;
     }
 
@@ -152,7 +151,7 @@ export class SendService implements SendServiceAbstraction {
             response = await this.apiService.putSend(sendData[0].id, request);
         }
 
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = new SendData(response, userId);
         await this.upsert(data);
     }
@@ -183,8 +182,8 @@ export class SendService implements SendServiceAbstraction {
     }
 
     async upsert(send: SendData | SendData[]): Promise<any> {
-        let sends = await this.activeAccountService.get<{ [id: string]: SendData; }>(
-            StorageKey.Sends, { skipMemory: true });
+        let sends = await this.activeAccount.getInformation<{ [id: string]: SendData; }>(
+            StorageKey.Sends, { storageMethod: 'disk' });
         if (sends == null) {
             sends = {};
         }
@@ -198,22 +197,22 @@ export class SendService implements SendServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Sends);
-        await this.activeAccountService.save(StorageKey.Sends, sends, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Sends);
+        await this.activeAccount.saveInformation(StorageKey.Sends, sends, { storageMethod: 'disk' });
     }
 
     async replace(sends: { [id: string]: SendData; }): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Sends);
-        await this.activeAccountService.save(StorageKey.Sends, sends, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Sends);
+        await this.activeAccount.saveInformation(StorageKey.Sends, sends, { storageMethod: 'disk' });
     }
 
     async clear(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Sends);
+        await this.activeAccount.removeInformation(StorageKey.Sends);
     }
 
     async delete(id: string | string[]): Promise<any> {
-        const sends = await this.activeAccountService.get<{ [id: string]: SendData; }>(
-            StorageKey.Sends, { skipMemory: true });
+        const sends = await this.activeAccount.getInformation<{ [id: string]: SendData; }>(
+            StorageKey.Sends, { storageMethod: 'disk' });
         if (sends == null) {
             return;
         }
@@ -229,8 +228,8 @@ export class SendService implements SendServiceAbstraction {
             });
         }
 
-        await this.activeAccountService.remove(StorageKey.Sends);
-        await this.activeAccountService.save(StorageKey.Sends, sends, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Sends);
+        await this.activeAccount.saveInformation(StorageKey.Sends, sends, { storageMethod: 'disk' });
     }
 
     async deleteWithServer(id: string): Promise<any> {
@@ -240,7 +239,7 @@ export class SendService implements SendServiceAbstraction {
 
     async removePasswordWithServer(id: string): Promise<any> {
         const response = await this.apiService.putSendRemovePassword(id);
-        const userId = this.activeAccountService.userId;
+        const userId = this.activeAccount.userId;
         const data = new SendData(response, userId);
         await this.upsert(data);
     }

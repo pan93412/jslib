@@ -17,9 +17,10 @@ export class WindowMain {
     private windowStates: { [key: string]: any; } = {};
     private enableAlwaysOnTop: boolean = false;
 
-    constructor(private hideTitleBar = false, private defaultWidth = 950,
-        private defaultHeight = 600, private argvCallback: (argv: string[]) => void = null,
-        private createWindowCallback: (win: BrowserWindow) => void, private storageService: StorageService) { }
+    constructor(private storageService: StorageService, private hideTitleBar = false,
+        private defaultWidth = 950, private defaultHeight = 600, 
+        private argvCallback: (argv: string[]) => void = null, 
+        private createWindowCallback: (win: BrowserWindow) => void) { }
 
     init(): Promise<any> {
         return new Promise<void>((resolve, reject) => {
@@ -202,7 +203,7 @@ export class WindowMain {
             const bounds = win.getBounds();
 
             if (this.windowStates[configKey] == null) {
-                this.windowStates[configKey] = await this.accountService.getSetting<any>(configKey);
+                this.windowStates[configKey] = await this.storageService.get<any>(configKey);
                 if (this.windowStates[configKey] == null) {
                     this.windowStates[configKey] = {};
                 }
@@ -218,12 +219,12 @@ export class WindowMain {
                 this.windowStates[configKey].height = bounds.height;
             }
 
-            await this.accountService.saveSetting(configKey, this.windowStates[configKey]);
+            await this.storageService.save(configKey, this.windowStates[configKey]);
         } catch (e) { }
     }
 
     private async getWindowState(configKey: string, defaultWidth: number, defaultHeight: number) {
-        let state = await this.accountService.getSetting<any>(configKey);
+        let state = await this.storageService.get<any>(configKey);
 
         const isValid = state != null && (this.stateHasBounds(state) || state.isMaximized);
         let displayBounds: Electron.Rectangle = null;

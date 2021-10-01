@@ -20,7 +20,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     private notificationsUrl: string;
     private eventsUrl: string;
 
-    constructor(private activeAccountService: ActiveAccountService) {}
+    constructor(private activeAccount: ActiveAccountService) {}
 
     hasBaseUrl() {
         return this.baseUrl != null;
@@ -104,7 +104,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
     }
 
     async setUrlsFromStorage(): Promise<void> {
-        const urlsObj: any = await this.activeAccountService.get<any>(StorageKey.EnvironmentUrls);
+        const urlsObj: any = await this.activeAccount.getInformation<any>(StorageKey.EnvironmentUrls);
         const urls = urlsObj || {
             base: null,
             api: null,
@@ -140,7 +140,7 @@ export class EnvironmentService implements EnvironmentServiceAbstraction {
         urls.events = this.formatUrl(urls.events);
 
         if (saveSettings) {
-            await this.activeAccountService.save(StorageKey.EnvironmentUrls, {
+            await this.activeAccount.saveInformation(StorageKey.EnvironmentUrls, {
                 base: urls.base,
                 api: urls.api,
                 identity: urls.identity,

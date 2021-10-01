@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 
 import { AuthResult } from 'jslib-common/models/domain/authResult';
 
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { AuthService } from 'jslib-common/abstractions/auth.service';
 import { CryptoFunctionService } from 'jslib-common/abstractions/cryptoFunction.service';
 import { EnvironmentService } from 'jslib-common/abstractions/environment.service';
@@ -44,7 +45,8 @@ export class LoginComponent extends CaptchaProtectedComponent implements OnInit 
         platformUtilsService: PlatformUtilsService, i18nService: I18nService,
         protected stateService: StateService, environmentService: EnvironmentService,
         protected passwordGenerationService: PasswordGenerationService,
-        protected cryptoFunctionService: CryptoFunctionService, private storageService: StorageService) {
+        protected cryptoFunctionService: CryptoFunctionService, private storageService: StorageService,
+        private activeAccountService: ActiveAccountService) {
         super(environmentService, i18nService, platformUtilsService);
     }
 
@@ -106,8 +108,8 @@ export class LoginComponent extends CaptchaProtectedComponent implements OnInit 
                     this.router.navigate([this.forcePasswordResetRoute]);
                 }
             } else {
-                const disableFavicon = await this.storageService.get<boolean>(StorageKey.DisableFavicon);
-                await this.stateService.save(StorageKey.DisableFavicon, !!disableFavicon);
+                const disableFavicon = await this.activeAccountService.getInformation<boolean>(StorageKey.DisableFavicon);
+                await this.activeAccountService.saveInformation(StorageKey.DisableFavicon, !!disableFavicon);
                 if (this.onSuccessfulLogin != null) {
                     this.onSuccessfulLogin();
                 }
@@ -141,8 +143,8 @@ export class LoginComponent extends CaptchaProtectedComponent implements OnInit 
         const codeChallenge = Utils.fromBufferToUrlB64(codeVerifierHash);
 
         // Save sso params
-        await this.storageService.save(StorageKey.SsoState, state);
-        await this.storageService.save(StorageKey.SsoCodeVerifier, ssoCodeVerifier);
+        await this.activeAccountService.saveInformation(StorageKey.SsoState, state);
+        await this.activeAccountService.saveInformation(StorageKey.SsoCodeVerifier, ssoCodeVerifier);
 
         // Build URI
         const webUrl = this.environmentService.getWebVaultUrl();

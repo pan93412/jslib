@@ -3,14 +3,12 @@ import { SettingsService as SettingsServiceAbstraction } from '../abstractions/s
 
 import { StorageKey } from '../enums/storageKey';
 
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
-
 export class SettingsService implements SettingsServiceAbstraction {
-    constructor(private activeAccountService: ActiveAccountService) {
+    constructor(private activeAccount: ActiveAccountService) {
     }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Settings, { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Settings, { storageMethod: 'memory' });
     }
 
     getEquivalentDomains(): Promise<any> {
@@ -22,13 +20,13 @@ export class SettingsService implements SettingsServiceAbstraction {
     }
 
     async clear(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Settings);
+        await this.activeAccount.removeInformation(StorageKey.Settings);
     }
 
     // Helpers
 
     private async getSettings(): Promise<any> {
-        return await this.activeAccountService.get(StorageKey.Settings);
+        return await this.activeAccount.getInformation(StorageKey.Settings);
     }
 
     private async getSettingsKey(key: string): Promise<any> {
@@ -46,6 +44,6 @@ export class SettingsService implements SettingsServiceAbstraction {
         }
 
         settings[key] = value;
-        await this.activeAccountService.save(StorageKey.Settings, settings);
+        await this.activeAccount.saveInformation(StorageKey.Settings, settings);
     }
 }

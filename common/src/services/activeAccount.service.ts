@@ -2,7 +2,7 @@ import { AccountsManagementService } from '../abstractions/accountsManagement.se
 import { ActiveAccountService as ActiveAccountServiceAbstraction } from '../abstractions/activeAccount.service';
 
 import { Account } from '../models/domain/account';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
+import { SettingStorageOptions, StorageMethod } from '../models/domain/settingStorageOptions';
 
 import { StorageKey } from '../enums/storageKey';
 
@@ -15,6 +15,10 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
         return this.activeAccount?.userId;
     }
 
+    get email(): string {
+        return this.activeAccount?.email;
+    }
+
     get isAuthenticated(): boolean {
         return this.activeAccount?.isAuthenticated ?? false;
     }
@@ -23,50 +27,66 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
         return this.activeAccount?.serverUrl;
     }
 
+    get canAccessPremium(): boolean {
+        return this.activeAccount?.canAccessPremium ?? false;
+    }
+
     constructor(private accountsManagementService: AccountsManagementService, private storeService: StoreService) {
         this.accountsManagementService.activeAccount.subscribe(data => this.activeAccount = data);
     }
 
-    async save(key: StorageKey | string, obj: any, options?: SettingStorageOptions): Promise<void> {
-        if (!options?.skipMemory && this.activeAccount != null) {
+    async saveInformation(key: StorageKey | string, obj: any, options?: SettingStorageOptions): Promise<void> {
+        if (this.useMemory(options?.storageMethod) && this.activeAccount != null) {
             this.activeAccount.information.set(key, obj);
             this.accountsManagementService.replace(this.activeAccount);
         }
 
-        if (!options?.skipDisk) {
+        if (this.useDisk(options?.storageMethod)) {
             await this.storeService.save(await this.prefixKey(key), obj, options);
         }
     }
 
-    async has(key: StorageKey | string, options?: SettingStorageOptions) {
-        if (!options?.skipMemory) {
-           return this.activeAccount?.information.has(key);
+    async hasInformation(key: StorageKey | string, options?: SettingStorageOptions) {
+        if (this.useMemory(options?.storageMethod)) {
+            return this.activeAccount?.information.has(key);
         }
 
-        if (!options?.skipDisk) {
+        if (this.useDisk(options?.storageMethod)) {
             return await this.storeService.has(await this.prefixKey(key), options);
         }
+
+        return false;
     }
 
-    async get<T>(key: StorageKey | string, options?: SettingStorageOptions): Promise<T> {
-        if (!options?.skipMemory && this.activeAccount?.information.has(key)) {
+    async getInformation<T>(key: StorageKey | string, options?: SettingStorageOptions): Promise<T> {
+        if (this.useMemory(options?.storageMethod) && this.activeAccount?.information.has(key)) {
             return this.activeAccount?.information.get(key) as T;
         }
 
-        if (!options?.skipDisk) {
+        if (this.useDisk(options?.storageMethod)) {
             return await this.storeService.get<T>(await this.prefixKey(key), options);
         }
+
+        return null;
     }
 
-    async remove(key: StorageKey | string, options?: SettingStorageOptions) {
-        if (!options?.skipMemory && this.activeAccount?.information.has(key)) {
+    async removeInformation(key: StorageKey | string, options?: SettingStorageOptions) {
+        if (this.useMemory(options?.storageMethod) && this.activeAccount?.information.has(key)) {
             this.activeAccount.information.delete(key);
             this.accountsManagementService.replace(this.activeAccount);
         }
 
-        if (!options?.skipDisk) {
+        if (this.useDisk(options?.storageMethod)) {
             await this.storeService.remove(await this.prefixKey(key), options);
         }
+    }
+
+    private useDisk(storageMethod: StorageMethod = 'both'): boolean {
+        return storageMethod === ('disk' || 'both');
+    }
+
+    private useMemory(storageMethod: StorageMethod = 'both'): boolean {
+        return storageMethod === ('memory' || 'both');
     }
 
     private async prefixKey(key: StorageKey | string): Promise<string> {

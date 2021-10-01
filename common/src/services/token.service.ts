@@ -8,7 +8,7 @@ import { Utils } from '../misc/utils';
 import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 
 export class TokenService implements TokenServiceAbstraction {
-    constructor(private activeAccountService: ActiveAccountService) {
+    constructor(private activeAccount: ActiveAccountService) {
     }
 
     async setTokens(accessToken: string, refreshToken: string, clientIdClientSecret: [string, string]): Promise<any> {
@@ -24,41 +24,41 @@ export class TokenService implements TokenServiceAbstraction {
         if (await this.skipTokenStorage() || clientId == null) {
             return;
         }
-        return this.activeAccountService.save(StorageKey.ApiKeyClientId, clientId);
+        return this.activeAccount.saveInformation(StorageKey.ApiKeyClientId, clientId);
     }
 
     async getClientId(): Promise<string> {
-        return await this.activeAccountService.get<string>(StorageKey.ApiKeyClientId);
+        return await this.activeAccount.getInformation<string>(StorageKey.ApiKeyClientId);
     }
 
     async setClientSecret(clientSecret: string): Promise<any> {
         if (await this.skipTokenStorage() || clientSecret == null) {
             return;
         }
-        return this.activeAccountService.save(StorageKey.ApiKeyClientSecret, clientSecret);
+        return this.activeAccount.saveInformation(StorageKey.ApiKeyClientSecret, clientSecret);
     }
 
     async getClientSecret(): Promise<string> {
-        return await this.activeAccountService.get<string>(StorageKey.ApiKeyClientSecret);
+        return await this.activeAccount.getInformation<string>(StorageKey.ApiKeyClientSecret);
     }
 
     async setToken(token: string): Promise<any> {
-        return this.activeAccountService.save(StorageKey.AccessToken, token, { skipDisk: await this.skipTokenStorage() });
+        return this.activeAccount.saveInformation(StorageKey.AccessToken, token, { storageMethod: await this.skipTokenStorage() ? 'memory' : 'both' });
     }
 
     async getToken(): Promise<string> {
-        return await this.activeAccountService.get<string>(StorageKey.AccessToken);
+        return await this.activeAccount.getInformation<string>(StorageKey.AccessToken);
     }
 
     async setRefreshToken(refreshToken: string): Promise<any> {
         if (await this.skipTokenStorage()) {
             return;
         }
-        return this.activeAccountService.save(StorageKey.RefreshToken, refreshToken);
+        return this.activeAccount.saveInformation(StorageKey.RefreshToken, refreshToken);
     }
 
     async getRefreshToken(): Promise<string> {
-        return await this.activeAccountService.get<string>(StorageKey.RefreshToken);
+        return await this.activeAccount.getInformation<string>(StorageKey.RefreshToken);
     }
 
     async toggleTokens(): Promise<any> {
@@ -66,8 +66,8 @@ export class TokenService implements TokenServiceAbstraction {
         const refreshToken = await this.getRefreshToken();
         const clientId = await this.getClientId();
         const clientSecret = await this.getClientSecret();
-        const timeout = await this.activeAccountService.get<number>(StorageKey.VaultTimeout);
-        const action = await this.activeAccountService.get<string>(StorageKey.VaultTimeoutAction);
+        const timeout = await this.activeAccount.getInformation<number>(StorageKey.VaultTimeout);
+        const action = await this.activeAccount.getInformation<string>(StorageKey.VaultTimeoutAction);
 
         if ((timeout != null || timeout === 0) && action === 'logOut') {
             // if we have a vault timeout and the action is log out, reset tokens
@@ -82,42 +82,39 @@ export class TokenService implements TokenServiceAbstraction {
     }
 
     setTwoFactorToken(token: string): Promise<any> {
-        return this.activeAccountService.save(StorageKey.TwoFactorToken, token);
+        return this.activeAccount.saveInformation(StorageKey.TwoFactorToken, token);
     }
 
     getTwoFactorToken(): Promise<string> {
-        return this.activeAccountService.get<string>(StorageKey.TwoFactorToken);
+        return this.activeAccount.getInformation<string>(StorageKey.TwoFactorToken);
     }
 
     clearTwoFactorToken(): Promise<any> {
-        return this.activeAccountService.remove(StorageKey.TwoFactorToken);
+        return this.activeAccount.removeInformation(StorageKey.TwoFactorToken);
     }
 
     async clearToken(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.AccessToken);
-        await this.activeAccountService.remove(StorageKey.RefreshToken);
-        await this.activeAccountService.remove(StorageKey.ClientId);
-        await this.activeAccountService.remove(StorageKey.ClientSecret);
+        await this.activeAccount.removeInformation(StorageKey.AccessToken);
+        await this.activeAccount.removeInformation(StorageKey.RefreshToken);
+        await this.activeAccount.removeInformation(StorageKey.ClientId);
+        await this.activeAccount.removeInformation(StorageKey.ClientSecret);
     }
 
     // jwthelper methods
     // ref https://github.com/auth0/angular-jwt/blob/master/src/angularJwt/services/jwt.js
 
     async decodeToken(token?: string): Promise<any> {
-        if (token === null) {
-            if (await this.activeAccountService.get(StorageKey.AccessToken, { skipDisk: true })) {
-                return await this.activeAccountService.get(StorageKey.AccessToken);
-            }
+        if (token === null && await this.activeAccount.hasInformation(StorageKey.AccessToken, { storageMethod: 'memory' })) {
+            return await this.activeAccount.getInformation(StorageKey.AccessToken, { storageMethod: 'memory' });
+        }
 
+        token = token ?? await this.activeAccount.getInformation<string>(StorageKey.AccessToken, { storageMethod: 'disk' });
+
+        if (token == null) {
             throw new Error('Token not found.');
         }
 
-        const parts = token != null ?
-            token.split('.') : (
-                await this.activeAccountService.get<string>(
-                    StorageKey.AccessToken)
-                ).split('.');
-
+        const parts = token.split('.');
         if (parts.length !== 3) {
             throw new Error('JWT must have 3 parts');
         }
@@ -212,8 +209,8 @@ export class TokenService implements TokenServiceAbstraction {
     }
 
     private async skipTokenStorage(): Promise<boolean> {
-        const timeout = await this.activeAccountService.get<number>(StorageKey.VaultTimeout);
-        const action = await this.activeAccountService.get<string>(StorageKey.VaultTimeoutAction);
+        const timeout = await this.activeAccount.getInformation<number>(StorageKey.VaultTimeout);
+        const action = await this.activeAccount.getInformation<string>(StorageKey.VaultTimeoutAction);
         return timeout != null && action === 'logOut';
     }
 }

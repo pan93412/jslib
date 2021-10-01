@@ -4,7 +4,6 @@ import { EncString } from '../models/domain/encString';
 import { GeneratedPasswordHistory } from '../models/domain/generatedPasswordHistory';
 import { PasswordGeneratorPolicyOptions } from '../models/domain/passwordGeneratorPolicyOptions';
 import { Policy } from '../models/domain/policy';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 
 import { ActiveAccountService } from '../abstractions/activeAccount.service';
 import { CryptoService } from '../abstractions/crypto.service';
@@ -43,7 +42,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     private history: GeneratedPasswordHistory[];
 
     constructor(private cryptoService: CryptoService, private policyService: PolicyService,
-        private activeAccountService: ActiveAccountService) { }
+        private activeAccount: ActiveAccountService) { }
 
     async generatePassword(options: any): Promise<string> {
         // overload defaults with given options
@@ -185,7 +184,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     }
 
     async getOptions(): Promise<[any, PasswordGeneratorPolicyOptions]> {
-        const options = await this.activeAccountService.get<any>(StorageKey.PasswordGenerationOptions);
+        const options = await this.activeAccount.getInformation<any>(StorageKey.PasswordGenerationOptions);
         if (options == null) {
             this.optionsCache = DefaultOptions;
         } else {
@@ -327,7 +326,7 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
     }
 
     async saveOptions(options: any) {
-        await this.activeAccountService.save(StorageKey.PasswordGenerationOptions, options);
+        await this.activeAccount.saveInformation(StorageKey.PasswordGenerationOptions, options);
     }
 
     async getHistory(): Promise<GeneratedPasswordHistory[]> {
@@ -337,13 +336,13 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         if (!this.history) {
-            const encrypted = await this.activeAccountService.get<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { skipMemory: true });
+            const encrypted = await this.activeAccount.getInformation<GeneratedPasswordHistory[]>(StorageKey.PasswordGenerationHistory, { storageMethod: 'disk' });
             const decrypted = await this.decryptHistory(encrypted);
-            await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, decrypted, { skipDisk: true });
+            await this.activeAccount.saveInformation(StorageKey.PasswordGenerationHistory, decrypted, { storageMethod: 'memory' });
         }
 
-        return await this.activeAccountService.has(StorageKey.PasswordGenerationHistory, { skipDisk: true }) ?
-            await this.activeAccountService.get(StorageKey.PasswordGenerationHistory, { skipDisk: true }) :
+        return await this.activeAccount.hasInformation(StorageKey.PasswordGenerationHistory, { storageMethod: 'memory' }) ?
+            await this.activeAccount.getInformation(StorageKey.PasswordGenerationHistory, { storageMethod: 'memory' }) :
             new Array<GeneratedPasswordHistory>();
     }
 
@@ -369,11 +368,11 @@ export class PasswordGenerationService implements PasswordGenerationServiceAbstr
         }
 
         const newHistory = await this.encryptHistory(currentHistory);
-        return await this.activeAccountService.save(StorageKey.PasswordGenerationHistory, newHistory, { skipMemory: true });
+        return await this.activeAccount.saveInformation(StorageKey.PasswordGenerationHistory, newHistory, { storageMethod: 'disk' });
     }
 
     async clear(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.PasswordGenerationHistory);
+        await this.activeAccount.removeInformation(StorageKey.PasswordGenerationHistory);
     }
 
     passwordStrength(password: string, userInputs: string[] = null): zxcvbn.ZXCVBNResult {

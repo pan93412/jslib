@@ -30,7 +30,7 @@ export class NotificationsService implements NotificationsServiceAbstraction {
     constructor(private syncService: SyncService, private appIdService: AppIdService,
         private apiService: ApiService, private vaultTimeoutService: VaultTimeoutService,
         private environmentService: EnvironmentService, private logoutCallback: () => Promise<void>,
-        private logService: LogService, private activeAccountService: ActiveAccountService) {
+        private logService: LogService, private activeAccount: ActiveAccountService) {
         this.environmentService.urls.subscribe(() => {
             if (!this.inited) {
                 return;
@@ -117,9 +117,9 @@ export class NotificationsService implements NotificationsServiceAbstraction {
             return;
         }
 
-        const isAuthenticated = this.activeAccountService.isAuthenticated;
+        const isAuthenticated = this.activeAccount.isAuthenticated;
         const payloadUserId = notification.payload.userId || notification.payload.UserId;
-        const myUserId = this.activeAccountService.userId;
+        const myUserId = this.activeAccount.userId;
         if (isAuthenticated && payloadUserId != null && payloadUserId !== myUserId) {
             return;
         }
@@ -200,7 +200,7 @@ export class NotificationsService implements NotificationsServiceAbstraction {
     }
 
     private async isAuthedAndUnlocked() {
-        if (this.activeAccountService.isAuthenticated) {
+        if (this.activeAccount.isAuthenticated) {
             const locked = await this.vaultTimeoutService.isLocked();
             return !locked;
         }

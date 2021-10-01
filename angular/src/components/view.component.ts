@@ -69,7 +69,7 @@ export class ViewComponent implements OnDestroy, OnInit {
         protected broadcasterService: BroadcasterService, protected ngZone: NgZone,
         protected changeDetectorRef: ChangeDetectorRef, protected eventService: EventService,
         protected apiService: ApiService, protected passwordRepromptService: PasswordRepromptService,
-        protected activeAccountService: ActiveAccountService) { }
+        protected activeAccount: ActiveAccountService) { }
 
     ngOnInit() {
         this.broadcasterService.subscribe(BroadcasterSubscriptionId, (message: any) => {
@@ -96,7 +96,7 @@ export class ViewComponent implements OnDestroy, OnInit {
 
         const cipher = await this.cipherService.get(this.cipherId);
         this.cipher = await cipher.decrypt();
-        this.canAccessPremium = this.activeAccountService.activeAccount.canAccessPremium;
+        this.canAccessPremium = this.activeAccount.canAccessPremium;
 
         if (this.cipher.type === CipherType.Login && this.cipher.login.totp &&
             (cipher.organizationUseTotp || this.canAccessPremium)) {

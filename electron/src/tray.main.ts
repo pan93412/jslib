@@ -8,13 +8,12 @@ import {
 } from 'electron';
 import * as path from 'path';
 
-import { AccountService } from 'jslib-common/abstractions/account.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
+import { StorageService } from 'jslib-common/abstractions/storage.service';
 
 import { StorageKey } from 'jslib-common/enums/storageKey';
 
 import { WindowMain } from './window.main';
-
 
 export class TrayMain {
     contextMenu: Menu;
@@ -25,7 +24,7 @@ export class TrayMain {
     private pressedIcon: Electron.NativeImage;
 
     constructor(private windowMain: WindowMain, private i18nService: I18nService,
-        private accountService: AccountService) {
+        private storageService: StorageService) {
         if (process.platform === 'win32') {
             this.icon = path.join(__dirname, '/images/icon.ico');
         } else if (process.platform === 'darwin') {

@@ -50,10 +50,10 @@ export class GroupingsComponent {
     private collapsedGroupings: Set<string>;
 
     constructor(protected collectionService: CollectionService, protected folderService: FolderService,
-        private activeAccountService: ActiveAccountService) { }
+        private activeAccount: ActiveAccountService) { }
 
     async load(setLoaded = true) {
-        const collapsedGroupings = await this.activeAccountService.get<string[]>(StorageKey.CollapsedGroupings);
+        const collapsedGroupings = await this.activeAccount.getInformation<string[]>(StorageKey.CollapsedGroupings);
         if (collapsedGroupings == null) {
             this.collapsedGroupings = new Set<string>();
         } else {
@@ -154,7 +154,7 @@ export class GroupingsComponent {
         } else {
             this.collapsedGroupings.add(id);
         }
-        await this.activeAccountService.save(StorageKey.CollapsedGroupings, this.collapsedGroupings);
+        await this.activeAccount.saveInformation(StorageKey.CollapsedGroupings, this.collapsedGroupings);
     }
 
     isCollapsed(grouping: FolderView | CollectionView, idPrefix = '') {

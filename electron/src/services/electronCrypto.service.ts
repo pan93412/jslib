@@ -12,8 +12,8 @@ import { CryptoService } from 'jslib-common/services/crypto.service';
 export class ElectronCryptoService extends CryptoService {
 
     constructor(cryptoFunctionService: CryptoFunctionService, platformUtilService: PlatformUtilsService,
-        logService: LogService, activeAccountService: ActiveAccountService) {
-        super(cryptoFunctionService, platformUtilService, logService, activeAccountService);
+        logService: LogService, activeAccount: ActiveAccountService) {
+        super(cryptoFunctionService, platformUtilService, logService, activeAccount);
     }
 
     async hasKeyStored(keySuffix: KeySuffixOptions): Promise<boolean> {
@@ -32,7 +32,7 @@ export class ElectronCryptoService extends CryptoService {
      */
     private async upgradeSecurelyStoredKey() {
         // attempt key upgrade, but if we fail just delete it. Keys will be stored property upon unlock anyway.
-        const key = await this.activeAccountService.get<string>(StorageKey.CryptoMasterKey, { skipMemory: true, useSecureStorage: true });
+        const key = await this.activeAccount.getInformation<string>(StorageKey.CryptoMasterKey, { skipMemory: true, useSecureStorage: true });
 
         if (key == null) {
             return;
@@ -40,16 +40,16 @@ export class ElectronCryptoService extends CryptoService {
 
         try {
             if (await this.shouldStoreKey('auto')) {
-                await this.activeAccountService.save(StorageKey.CryptoMasterKey, key, { keySuffix: 'auto', skipMemory: true, useSecureStorage: true });
+                await this.activeAccount.saveInformation(StorageKey.CryptoMasterKey, key, { keySuffix: 'auto', skipMemory: true, useSecureStorage: true });
             }
             if (await this.shouldStoreKey('biometric')) {
-                await this.activeAccountService.save(StorageKey.CryptoMasterKey, key, { keySuffix: 'biometric', skipMemory: true, useSecureStorage: true });
+                await this.activeAccount.saveInformation(StorageKey.CryptoMasterKey, key, { keySuffix: 'biometric', skipMemory: true, useSecureStorage: true });
             }
         } catch (e) {
             this.logService.error(`Encountered error while upgrading obsolete Bitwarden secure storage item:`);
             this.logService.error(e);
         }
 
-        await this.activeAccountService.remove(StorageKey.CryptoMasterKey, { useSecureStorage: true });
+        await this.activeAccount.removeInformation(StorageKey.CryptoMasterKey, { useSecureStorage: true });
     }
 }

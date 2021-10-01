@@ -15,7 +15,7 @@ export class SystemService implements SystemServiceAbstraction {
 
     constructor(private vaultTimeoutService: VaultTimeoutService, private messagingService: MessagingService,
         private platformUtilsService: PlatformUtilsService, private reloadCallback: () => Promise<void> = null,
-        private activeAccountService: ActiveAccountService) {
+        private activeAccount: ActiveAccountService) {
     }
 
     startProcessReload(): void {
@@ -27,14 +27,14 @@ export class SystemService implements SystemServiceAbstraction {
         this.cancelProcessReload();
         this.reloadInterval = setInterval(async () => {
             let doRefresh = false;
-            const lastActive = await this.activeAccountService.get<number>(StorageKey.LastActive);
+            const lastActive = await this.activeAccount.getInformation<number>(StorageKey.LastActive);
             if (lastActive != null) {
                 const diffSeconds = (new Date()).getTime() - lastActive;
                 // Don't refresh if they are still active in the window
                 doRefresh = diffSeconds >= 5000;
             }
             const biometricLockedFingerprintValidated =
-                await this.activeAccountService.get<boolean>(StorageKey.BiometricFingerprintValidated) && this.vaultTimeoutService.biometricLocked;
+                await this.activeAccount.getInformation<boolean>(StorageKey.BiometricFingerprintValidated) && this.vaultTimeoutService.biometricLocked;
             if (doRefresh && !biometricLockedFingerprintValidated) {
                 clearInterval(this.reloadInterval);
                 this.reloadInterval = null;
@@ -61,7 +61,7 @@ export class SystemService implements SystemServiceAbstraction {
         if (Utils.isNullOrWhitespace(clipboardValue)) {
             return;
         }
-        this.activeAccountService.get<number>(StorageKey.ClearClipboard).then(clearSeconds => {
+        this.activeAccount.getInformation<number>(StorageKey.ClearClipboard).then(clearSeconds => {
             if (clearSeconds == null) {
                 return;
             }

@@ -13,10 +13,10 @@ import { VaultTimeoutService } from 'jslib-common/abstractions/vaultTimeout.serv
 @Injectable()
 export class AuthGuardService implements CanActivate {
     constructor(private vaultTimeoutService: VaultTimeoutService, private router: Router,
-        private messagingService: MessagingService, private activeAccountService: ActiveAccountService) { }
+        private messagingService: MessagingService, private activeAccount: ActiveAccountService) { }
 
     async canActivate(route: ActivatedRouteSnapshot, routerState: RouterStateSnapshot) {
-        const isAuthed = this.activeAccountService.activeAccount?.isAuthenticated;
+        const isAuthed = this.activeAccount.isAuthenticated;
         if (!isAuthed) {
             this.messagingService.send('authBlocked');
             return false;

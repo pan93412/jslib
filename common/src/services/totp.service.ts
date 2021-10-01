@@ -10,7 +10,7 @@ const B32Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const SteamChars = '23456789BCDFGHJKMNPQRTVWXY';
 
 export class TotpService implements TotpServiceAbstraction {
-    constructor(private cryptoFunctionService: CryptoFunctionService, private activeAccountService: ActiveAccountService) { }
+    constructor(private cryptoFunctionService: CryptoFunctionService, private activeAccount: ActiveAccountService) { }
 
     async getCode(key: string): Promise<string> {
         if (key == null) {
@@ -106,7 +106,7 @@ export class TotpService implements TotpServiceAbstraction {
     }
 
     async isAutoCopyEnabled(): Promise<boolean> {
-        return !(await this.activeAccountService.get<boolean>(StorageKey.DisableAutoTotpCopy));
+        return !(await this.activeAccount.getInformation<boolean>(StorageKey.DisableAutoTotpCopy));
     }
 
     // Helpers

@@ -7,7 +7,6 @@ import { PolicyData } from '../models/data/policyData';
 import { MasterPasswordPolicyOptions } from '../models/domain/masterPasswordPolicyOptions';
 import { Policy } from '../models/domain/policy';
 import { ResetPasswordPolicyOptions } from '../models/domain/resetPasswordPolicyOptions';
-import { SettingStorageOptions } from '../models/domain/settingStorageOptions';
 
 import { OrganizationUserStatusType } from '../enums/organizationUserStatusType';
 import { StorageKey } from '../enums/storageKey';
@@ -18,30 +17,31 @@ import { ListResponse } from '../models/response/listResponse';
 import { PolicyResponse } from '../models/response/policyResponse';
 
 export class PolicyService implements PolicyServiceAbstraction {
-    constructor(private activeAccountService: ActiveAccountService, private organizationService: OrganizationService) {
+    constructor(private activeAccount: ActiveAccountService, private organizationService: OrganizationService) {
     }
 
     async clearCache(): Promise<void> {
-        await this.activeAccountService.remove(StorageKey.Policies, { skipDisk: true });
+        await this.activeAccount.removeInformation(StorageKey.Policies, { storageMethod: 'memory' });
     }
 
     async getAll(type?: PolicyType): Promise<Policy[]> {
-        if (!await this.activeAccountService.has(StorageKey.Policies, { skipDisk: true })) {
-            const policies = await this.activeAccountService.get<{ [id: string]: PolicyData; }>(
-                StorageKey.Policies, { skipMemory: true });
-            const response: Policy[] = [];
-            for (const id in policies) {
-                if (policies.hasOwnProperty(id)) {
-                    response.push(new Policy(policies[id]));
+        let response: Policy[] = [];
+        if (await this.activeAccount.hasInformation(StorageKey.Policies, { storageMethod: 'memory' })) {
+            response = await this.activeAccount.getInformation<Policy[]>(StorageKey.Policies, { storageMethod: 'memory' });
+        } else {
+            const diskPolicies = await this.activeAccount.getInformation<{ [id: string]: PolicyData; }>(
+                StorageKey.Policies, { storageMethod: 'disk' });
+            for (const id in diskPolicies) {
+                if (diskPolicies.hasOwnProperty(id)) {
+                    response.push(new Policy(diskPolicies[id]));
                 }
             }
-            await this.activeAccountService.save(StorageKey.Policies, response, { skipDisk : true });
+            await this.activeAccount.saveInformation(StorageKey.Policies, response, { storageMethod: 'memory' });
         }
-        const policyCache = await this.activeAccountService.get<Policy[]>(StorageKey.Policies);
         if (type != null) {
-            return policyCache.filter(policy => policy.type === type);
+            return response.filter(policy => policy.type === type);
         } else {
-            return policyCache;
+            return response;
         }
     }
 
@@ -51,12 +51,12 @@ export class PolicyService implements PolicyServiceAbstraction {
     }
 
     async replace(policies: { [id: string]: PolicyData; }): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Policies);
-        await this.activeAccountService.save(StorageKey.Policies, policies, { skipMemory: true });
+        await this.activeAccount.removeInformation(StorageKey.Policies);
+        await this.activeAccount.saveInformation(StorageKey.Policies, policies, { storageMethod: 'disk' });
     }
 
     async clear(): Promise<any> {
-        await this.activeAccountService.remove(StorageKey.Policies);
+        await this.activeAccount.removeInformation(StorageKey.Policies);
     }
 
     async getMasterPasswordPolicyOptions(policies?: Policy[]): Promise<MasterPasswordPolicyOptions> {

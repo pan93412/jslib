@@ -12,6 +12,7 @@ import {
 import { DeviceType } from 'jslib-common/enums/deviceType';
 import { ThemeType } from 'jslib-common/enums/themeType';
 
+import { ActiveAccountService } from 'jslib-common/abstractions/activeAccount.service';
 import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { MessagingService } from 'jslib-common/abstractions/messaging.service';
 import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.service';
@@ -27,7 +28,7 @@ export class ElectronPlatformUtilsService implements PlatformUtilsService {
     private deviceCache: DeviceType = null;
 
     constructor(protected i18nService: I18nService, private messagingService: MessagingService,
-        private isDesktopApp: boolean, private storageService: StorageService) {
+        private isDesktopApp: boolean, private storageService: StorageService, private activeAccountService: ActiveAccountService) {
         this.identityClientId = isDesktopApp ? 'desktop' : 'connector';
     }
 

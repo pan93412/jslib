@@ -32,10 +32,10 @@ export class ChangePasswordComponent implements OnInit {
     constructor(protected i18nService: I18nService, protected cryptoService: CryptoService,
         protected messagingService: MessagingService, protected passwordGenerationService: PasswordGenerationService,
         protected platformUtilsService: PlatformUtilsService, protected policyService: PolicyService,
-        protected activeAccountService: ActiveAccountService) { }
+        protected activeAccount: ActiveAccountService) { }
 
     async ngOnInit() {
-        this.email = this.activeAccountService.activeAccount.email;
+        this.email = this.activeAccount.email;
         this.enforcedPolicyOptions = await this.policyService.getMasterPasswordPolicyOptions();
     }
 
@@ -48,12 +48,12 @@ export class ChangePasswordComponent implements OnInit {
             return;
         }
 
-        const email = this.activeAccountService.activeAccount.email;
+        const email = this.activeAccount.email;
         if (this.kdf == null) {
-            this.kdf = await this.activeAccountService.get<KdfType>(StorageKey.KdfType);
+            this.kdf = await this.activeAccount.getInformation<KdfType>(StorageKey.KdfType);
         }
         if (this.kdfIterations == null) {
-            this.kdfIterations = await this.activeAccountService.get<number>(StorageKey.KdfIterations);
+            this.kdfIterations = await this.activeAccount.getInformation<number>(StorageKey.KdfIterations);
         }
         const key = await this.cryptoService.makeKey(this.masterPassword, email.trim().toLowerCase(),
             this.kdf, this.kdfIterations);
