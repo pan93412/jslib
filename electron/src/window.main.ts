@@ -18,8 +18,8 @@ export class WindowMain {
     private enableAlwaysOnTop: boolean = false;
 
     constructor(private storageService: StorageService, private hideTitleBar = false,
-        private defaultWidth = 950, private defaultHeight = 600, 
-        private argvCallback: (argv: string[]) => void = null, 
+        private defaultWidth = 950, private defaultHeight = 600,
+        private argvCallback: (argv: string[]) => void = null,
         private createWindowCallback: (win: BrowserWindow) => void) { }
 
     init(): Promise<any> {
