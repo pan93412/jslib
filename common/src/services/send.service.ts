@@ -257,7 +257,7 @@ export class SendService implements SendServiceAbstraction {
                     reject(e);
                 }
             };
-            reader.onerror = _evt => {
+            reader.onerror = () => {
                 reject('Error reading file.');
             };
         });

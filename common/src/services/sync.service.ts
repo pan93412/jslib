@@ -5,7 +5,9 @@ import { CollectionService } from '../abstractions/collection.service';
 import { CryptoService } from '../abstractions/crypto.service';
 import { FolderService } from '../abstractions/folder.service';
 import { MessagingService } from '../abstractions/messaging.service';
+import { OrganizationService } from '../abstractions/organization.service';
 import { PolicyService } from '../abstractions/policy.service';
+import { ProviderService } from '../abstractions/provider.service';
 import { SendService } from '../abstractions/send.service';
 import { SettingsService } from '../abstractions/settings.service';
 import { SyncService as SyncServiceAbstraction } from '../abstractions/sync.service';
@@ -41,7 +43,8 @@ export class SyncService implements SyncServiceAbstraction {
         private cryptoService: CryptoService, private collectionService: CollectionService,
         private messagingService: MessagingService,  private policyService: PolicyService,
         private sendService: SendService,  private logoutCallback: (expired: boolean) => Promise<void>,
-        private activeAccount: ActiveAccountService) {
+        private activeAccount: ActiveAccountService, private organizationService: OrganizationService,
+        private providerService: ProviderService) {
     }
 
     async getLastSync(): Promise<Date> {
@@ -306,8 +309,8 @@ export class SyncService implements SyncServiceAbstraction {
             }
         });
         return Promise.all([
-            this.activeAccount.saveInformation(StorageKey.Organizations, organizations),
-            this.activeAccount.saveInformation(StorageKey.Providers, providers),
+            this.organizationService.save(organizations),
+            this.providerService.save(providers),
         ]);
     }
 

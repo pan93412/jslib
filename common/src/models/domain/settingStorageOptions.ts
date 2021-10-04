@@ -1,7 +1,5 @@
 export type SettingStorageOptions = {
     keySuffix?: KeySuffixOptions;
-    skipDisk?: boolean;
-    skipMemory?: boolean;
     storageMethod?: StorageMethod;
     useSecureStorage?: boolean;
 };

@@ -40,4 +40,8 @@ export class OrganizationService implements OrganizationServiceAbstraction {
         }
         return response;
     }
+
+    async save(organizations: {[id: string]: OrganizationData}) {
+        return await this.activeAccount.saveInformation(StorageKey.Organizations, organizations);
+    }
 }
