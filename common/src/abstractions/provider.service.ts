@@ -5,5 +5,5 @@ import { Provider } from '../models/domain/provider';
 export abstract class ProviderService {
     get: (id: string) => Promise<Provider>;
     getAll: () => Promise<Provider[]>;
-    save: (orgs: {[id: string]: ProviderData}) => Promise<any>;
+    save: (providers: {[id: string]: ProviderData}) => Promise<any>;
 }

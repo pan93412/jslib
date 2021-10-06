@@ -33,4 +33,8 @@ export class ProviderService implements ProviderServiceAbstraction {
         }
         return response;
     }
+
+    async save(providers: { [id: string]: ProviderData; }) {
+        await this.activeAccount.saveInformation(StorageKey.Providers, providers);
+    }
 }

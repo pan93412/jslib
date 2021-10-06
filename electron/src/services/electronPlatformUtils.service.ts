@@ -17,10 +17,7 @@ import { I18nService } from 'jslib-common/abstractions/i18n.service';
 import { MessagingService } from 'jslib-common/abstractions/messaging.service';
 import { PlatformUtilsService } from 'jslib-common/abstractions/platformUtils.service';
 import { StorageService } from 'jslib-common/abstractions/storage.service';
-
-import { ConstantsService } from 'jslib-common/services/constants.service';
-
-import { ElectronConstants } from '../electronConstants';
+import { StorageKey } from 'jslib-common/enums/storageKey';
 
 export class ElectronPlatformUtilsService implements PlatformUtilsService {
     identityClientId: string;
@@ -28,7 +25,8 @@ export class ElectronPlatformUtilsService implements PlatformUtilsService {
     private deviceCache: DeviceType = null;
 
     constructor(protected i18nService: I18nService, private messagingService: MessagingService,
-        private isDesktopApp: boolean, private storageService: StorageService, private activeAccountService: ActiveAccountService) {
+        private isDesktopApp: boolean, private storageService: StorageService, 
+        private activeAccount: ActiveAccountService) {
         this.identityClientId = isDesktopApp ? 'desktop' : 'connector';
     }
 
@@ -201,7 +199,7 @@ export class ElectronPlatformUtilsService implements PlatformUtilsService {
     }
 
     async getEffectiveTheme() {
-        const theme = await this.storageService.get<ThemeType>(ConstantsService.themeKey);
+        const theme = await this.activeAccount.getInformation<ThemeType>(StorageKey.Theme);
         if (theme == null || theme === ThemeType.System) {
             return this.getDefaultSystemTheme();
         } else {

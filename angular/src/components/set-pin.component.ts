@@ -38,10 +38,10 @@ export class SetPinComponent {
         const pinProtectedKey = await this.cryptoService.encrypt(key.key, pinKey);
         if (this.masterPassOnRestart) {
             const encPin = await this.cryptoService.encrypt(this.pin);
-            await this.activeAccount.saveInformation(StorageKey.ProtectedPin, encPin.encryptedString, { skipMemory: true });
+            await this.activeAccount.saveInformation(StorageKey.ProtectedPin, encPin.encryptedString, { storageMethod: 'disk' });
             this.vaultTimeoutService.pinProtectedKey = pinProtectedKey;
         } else {
-            await this.activeAccount.saveInformation(StorageKey.PinProtectedKey, pinProtectedKey.encryptedString, { skipMemory: true });
+            await this.activeAccount.saveInformation(StorageKey.PinProtectedKey, pinProtectedKey.encryptedString, { storageMethod: 'disk' });
         }
 
         this.modalRef.close(true);
