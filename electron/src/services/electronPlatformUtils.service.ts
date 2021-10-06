@@ -25,7 +25,7 @@ export class ElectronPlatformUtilsService implements PlatformUtilsService {
     private deviceCache: DeviceType = null;
 
     constructor(protected i18nService: I18nService, private messagingService: MessagingService,
-        private isDesktopApp: boolean, private storageService: StorageService, 
+        private isDesktopApp: boolean, private storageService: StorageService,
         private activeAccount: ActiveAccountService) {
         this.identityClientId = isDesktopApp ? 'desktop' : 'connector';
     }
