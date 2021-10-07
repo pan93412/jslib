@@ -66,7 +66,6 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
         if (this.useDisk(options?.storageMethod)) {
             return await this.storeService.get<T>(await this.prefixKey(key), options);
         }
-
         return null;
     }
 
@@ -82,11 +81,11 @@ export class ActiveAccountService implements ActiveAccountServiceAbstraction {
     }
 
     private useDisk(storageMethod: StorageMethod = 'both'): boolean {
-        return storageMethod === ('disk' || 'both');
+        return storageMethod  !== 'memory';
     }
 
     private useMemory(storageMethod: StorageMethod = 'both'): boolean {
-        return storageMethod === ('memory' || 'both');
+        return storageMethod !== 'disk' ;
     }
 
     private async prefixKey(key: StorageKey | string): Promise<string> {

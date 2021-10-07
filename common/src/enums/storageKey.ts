@@ -95,4 +95,5 @@ export enum StorageKey {
     Theme = 'theme',
     VaultTimeout = 'lockOption',
     VaultTimeoutAction = 'vaultTimeoutAction',
+    SsoOrgIdentifier = 'ssoOrgIdentifier',
 }
